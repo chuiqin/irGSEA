@@ -9,6 +9,9 @@
 Integrate all single cell rank-based gene set enrichment analysis and
 easy to visualize the results.
 
+For more details, please view
+[irGSEA](https://chuiqin.github.io/irGSEA/)
+
 ## Installation
 
 ``` r
@@ -180,7 +183,11 @@ irGSEA.heatmap.plot
 
 ### Bubble.plot
 
-Show co-upregulated or co-downregulated gene sets per cluster in RRA
+Show co-upregulated or co-downregulated gene sets per cluster in RRA.
+
+If error (argument “caller\_env” is missing, with no default) occurs :
+please uninstall ggtree and run
+“remotes::install\_github(”YuLab-SMU/ggtree“)”.
 
 ``` r
 irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge, 
