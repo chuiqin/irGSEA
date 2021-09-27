@@ -1,0 +1,43 @@
+Package: irGSEA
+Type: Package
+Title: The integration of single cell rank-based gene set enrichment analysis
+Version: 1.0.0
+Author: Chuiqin Fan
+Author@R: person("Chuiqin", "Fan", role = c('aut', 'cre'), email = '19cqfan@stu.edu.cn')
+Maintainer: Chuiqin Fan <19cqfan@stu.edu.cn>
+Description: The integration of single cell rank-based gene set enrichment analysis.
+    Meanwhile, you are easy to visualize the results.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Imports: 
+    aplot,
+    AUCell,
+    ComplexHeatmap,
+    dplyr,
+    ggfun,
+    gghalves,
+    ggplot2,
+    ggplotify,
+    ggridges,
+    ggsci,
+    ggtree,
+    GSEABase,
+    GSVA,
+    magrittr,
+    methods,
+    msigdbr,
+    Nebulosa,
+    purrr,
+    reshape2,
+    RobustRankAggreg,
+    Seurat,
+    SeuratObject,
+    singscore,
+    stringr,
+    SummarizedExperiment,
+    tibble,
+    tidyr,
+    tidyselect,
+    UCell
