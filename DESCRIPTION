@@ -41,3 +41,5 @@ Imports:
     tidyr,
     tidyselect,
     UCell
+URL: https://github.com/chuiqin/irGSEA
+BugReports: https://github.com/chuiqin/irGSEA/issues
