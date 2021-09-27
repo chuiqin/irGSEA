@@ -9,6 +9,8 @@
 Integrate all single cell rank-based gene set enrichment analysis and
 easy to visualize the results.
 
+For more details, you can view it. [irGSEA](https://chuiqin.github.io/irGSEA/)
+
 ## Preparation
 
 ``` r
