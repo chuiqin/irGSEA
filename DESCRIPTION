@@ -16,6 +16,8 @@ Imports:
     AUCell,
     ComplexHeatmap,
     data.table,
+    doParallel,
+    doRNG,
     dplyr,
     ggfun,
     gghalves,

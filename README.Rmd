@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 Integrate all single cell rank-based gene set enrichment analysis and
 easy to visualize the results.
 
-## Preparation
+## Installation
 
 ```{r}
 
@@ -31,7 +31,8 @@ cran.packages <- c("msigdbr", "dplyr", "purrr", "stringr","magrittr",
                    "RobustRankAggreg", "tibble", "reshape2", "ggsci",
                    "tidyr", "aplot", "ggfun", "ggplotify", "ggridges", 
                    "gghalves", "Seurat", "SeuratObject", "methods", 
-                   "devtools", "BiocManager","data.table")
+                   "devtools", "BiocManager","data.table","doParallel",
+                   "doRNG")
 if (!requireNamespace(cran.packages, quietly = TRUE)) { 
     install.packages(cran.packages, ask = F, update = F)
 }
@@ -41,16 +42,17 @@ bioconductor.packages <- c("GSEABase", "AUCell", "SummarizedExperiment",
                            "singscore", "GSVA", "ComplexHeatmap", "ggtree", 
                            "Nebulosa")
 if (!requireNamespace(bioconductor.packages, quietly = TRUE)) { 
-    BiocManager::install.packages(bioconductor.packages, ask = F, update = F)
+    BiocManager::install(bioconductor.packages, ask = F, update = F)
 }
 
-# install packages from Github
 if (!requireNamespace("UCell", quietly = TRUE)) { 
     devtools::install_github("carmonalab/UCell")
 }
 if (!requireNamespace("irGSEA", quietly = TRUE)) { 
     devtools::install_github("chuiqin/irGSEA")
 }
+
+
 
 ```
 
@@ -69,7 +71,7 @@ InstallData("pbmc3k")
 ?pbmc3k.final
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(Seurat)
 library(SeuratData)
 # loading dataset
@@ -83,18 +85,25 @@ Idents(pbmc3k.final) <- pbmc3k.final$seurat_annotations
 
 ```
 
+## Load library
+```{r message=FALSE, warning=FALSE}
+library(UCell)
+library(irGSEA)
+```
+
+
 ## Calculate enrichment scores
 
 calculate enrichment scores, return a Seurat object including these
 score matrix
 
+
+Error (Valid 'mctype': 'snow' or 'doMC') occurs when ncore > 1 :
+please ensure the version of AUCell >= 1.14 or set ncore = 1.
+
 ```{r}
-library(data.table)
-library(irGSEA)
-library(UCell)
-Seurat::Assays(pbmc3k.final)
 pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA", 
-                             slot = "data", seeds = 123, ncores = 4,
+                             slot = "data", seeds = 123, ncores = 1,
                              min.cells = 3, min.feature = 0,
                              custom = F, geneset = NULL, msigdb = T, 
                              species = "Homo sapiens", category = "H",  
@@ -132,7 +141,7 @@ class(result.dge)
 
 Show co-upregulated or co-downregulated gene sets per cluster in RRA
 
-```{r fig.height=10, fig.width=10}
+```{r fig.height=7, fig.width=10}
 irGSEA.heatmap.plot <- irGSEA.heatmap(object = result.dge, 
                                       method = "RRA",
                                       top = 50, 
@@ -144,7 +153,7 @@ irGSEA.heatmap.plot
 
 Show co-upregulated or co-downregulated gene sets per cluster in RRA
 
-```{r fig.height=10, fig.width=10}
+```{r fig.height=6, fig.width=10}
 irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge, 
                                     method = "RRA", 
                                     top = 50)
@@ -154,6 +163,9 @@ irGSEA.bubble.plot
 ### upset plot
 
 Show the intersections of significant gene sets among clusters in RRA
+
+Don't worry if warning happens : the condition has length > 1 and only 
+the first element will be used. It's ok.
 
 ```{r}
 irGSEA.upset.plot <- irGSEA.upset(object = result.dge, 

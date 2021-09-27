@@ -73,16 +73,17 @@
 <!-- badges: start -->
 <!-- badges: end -->
 <p>Integrate all single cell rank-based gene set enrichment analysis and easy to visualize the results.</p>
-<div id="preparation" class="section level2">
+<div id="installation" class="section level2">
 <h2 class="hasAnchor">
-<a href="#preparation" class="anchor"></a>Preparation</h2>
+<a href="#installation" class="anchor"></a>Installation</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># install packages from CRAN</span>
 <span class="va">cran.packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"msigdbr"</span>, <span class="st">"dplyr"</span>, <span class="st">"purrr"</span>, <span class="st">"stringr"</span>,<span class="st">"magrittr"</span>,
                    <span class="st">"RobustRankAggreg"</span>, <span class="st">"tibble"</span>, <span class="st">"reshape2"</span>, <span class="st">"ggsci"</span>,
                    <span class="st">"tidyr"</span>, <span class="st">"aplot"</span>, <span class="st">"ggfun"</span>, <span class="st">"ggplotify"</span>, <span class="st">"ggridges"</span>, 
                    <span class="st">"gghalves"</span>, <span class="st">"Seurat"</span>, <span class="st">"SeuratObject"</span>, <span class="st">"methods"</span>, 
-                   <span class="st">"devtools"</span>, <span class="st">"BiocManager"</span>,<span class="st">"data.table"</span><span class="op">)</span>
+                   <span class="st">"devtools"</span>, <span class="st">"BiocManager"</span>,<span class="st">"data.table"</span>,<span class="st">"doParallel"</span>,
+                   <span class="st">"doRNG"</span><span class="op">)</span>
 <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span><span class="op">(</span><span class="va">cran.packages</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span> 
     <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="va">cran.packages</span>, ask <span class="op">=</span> <span class="cn">F</span>, update <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>
 <span class="op">}</span>
@@ -92,15 +93,14 @@
                            <span class="st">"singscore"</span>, <span class="st">"GSVA"</span>, <span class="st">"ComplexHeatmap"</span>, <span class="st">"ggtree"</span>, 
                            <span class="st">"Nebulosa"</span><span class="op">)</span>
 <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span><span class="op">(</span><span class="va">bioconductor.packages</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span> 
-    <span class="fu">BiocManager</span><span class="fu">::</span><span class="fu">install.packages</span><span class="op">(</span><span class="va">bioconductor.packages</span>, ask <span class="op">=</span> <span class="cn">F</span>, update <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>
+    <span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span><span class="op">(</span><span class="va">bioconductor.packages</span>, ask <span class="op">=</span> <span class="cn">F</span>, update <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>
 <span class="op">}</span>
 
-<span class="co"># install packages from Github</span>
 <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span><span class="op">(</span><span class="st">"UCell"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span> 
-    <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"carmonalab/UCell"</span><span class="op">)</span>
+    <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/devtools/man/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"carmonalab/UCell"</span><span class="op">)</span>
 <span class="op">}</span>
 <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span><span class="op">(</span><span class="st">"irGSEA"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span> 
-    <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"chuiqin/irGSEA"</span><span class="op">)</span>
+    <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/devtools/man/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"chuiqin/irGSEA"</span><span class="op">)</span>
 <span class="op">}</span></code></pre></div>
 </div>
 <div id="load-example-dataset" class="section level2">
@@ -118,60 +118,10 @@
 <span class="op">?</span><span class="va">pbmc3k.final</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat">Seurat</a></span><span class="op">)</span>
-<span class="co">#&gt; Attaching SeuratObject</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://www.satijalab.org/seurat">SeuratData</a></span><span class="op">)</span>
-<span class="co">#&gt; Registered S3 method overwritten by 'cli':</span>
-<span class="co">#&gt;   method     from         </span>
-<span class="co">#&gt;   print.boxx spatstat.geom</span>
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-
-<span class="co">#&gt; Warning in if (is.na(desc)) {: the condition has length &gt; 1 and only the first</span>
-<span class="co">#&gt; element will be used</span>
-<span class="co">#&gt; ── Installed datasets ───────────────────────────────────── SeuratData v0.2.1 ──</span>
-<span class="co">#&gt; ✓ pbmc3k 3.1.4</span>
-<span class="co">#&gt; ────────────────────────────────────── Key ─────────────────────────────────────</span>
-<span class="co">#&gt; ✓ Dataset loaded successfully</span>
-<span class="co">#&gt; &gt; Dataset built with a newer version of Seurat than installed</span>
-<span class="co">#&gt; ❓ Unknown version of Seurat installed</span>
 <span class="co"># loading dataset</span>
 <span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"pbmc3k.final"</span><span class="op">)</span>
 <span class="va">pbmc3k.final</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/SeuratObject/man/UpdateSeuratObject.html">UpdateSeuratObject</a></span><span class="op">(</span><span class="va">pbmc3k.final</span><span class="op">)</span>
-<span class="co">#&gt; Validating object structure</span>
-<span class="co">#&gt; Updating object slots</span>
-<span class="co">#&gt; Ensuring keys are in the proper strucutre</span>
-<span class="co">#&gt; Ensuring feature names don't have underscores or pipes</span>
-<span class="co">#&gt; Object representation is consistent with the most current Seurat version</span>
 <span class="co"># plot</span>
 <span class="fu"><a href="https://rdrr.io/pkg/Seurat/man/DimPlot.html">DimPlot</a></span><span class="op">(</span><span class="va">pbmc3k.final</span>, reduction <span class="op">=</span> <span class="st">"umap"</span>,
         group.by <span class="op">=</span> <span class="st">"seurat_annotations"</span>,label <span class="op">=</span> <span class="cn">T</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/Seurat/man/SeuratTheme.html">NoLegend</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
@@ -180,19 +130,21 @@
 <code class="sourceCode R"><span class="co"># set cluster to idents</span>
 <span class="fu"><a href="https://rdrr.io/pkg/SeuratObject/man/Idents.html">Idents</a></span><span class="op">(</span><span class="va">pbmc3k.final</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">pbmc3k.final</span><span class="op">$</span><span class="va">seurat_annotations</span></code></pre></div>
 </div>
+<div id="load-library" class="section level2">
+<h2 class="hasAnchor">
+<a href="#load-library" class="anchor"></a>Load library</h2>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">UCell</span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/chuiqin/irGSEA">irGSEA</a></span><span class="op">)</span></code></pre></div>
+</div>
 <div id="calculate-enrichment-scores" class="section level2">
 <h2 class="hasAnchor">
 <a href="#calculate-enrichment-scores" class="anchor"></a>Calculate enrichment scores</h2>
 <p>calculate enrichment scores, return a Seurat object including these score matrix</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com">data.table</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/chuiqin/irGSEA">irGSEA</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">UCell</span><span class="op">)</span>
-<span class="co">#&gt; Loading required package: Matrix</span>
-<span class="fu">Seurat</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SeuratObject/man/ObjectAccess.html">Assays</a></span><span class="op">(</span><span class="va">pbmc3k.final</span><span class="op">)</span>
-<span class="co">#&gt; [1] "RNA"</span>
-<span class="va">pbmc3k.final</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.score.html">irGSEA.score</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc3k.final</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, 
-                             slot <span class="op">=</span> <span class="st">"data"</span>, seeds <span class="op">=</span> <span class="fl">123</span>, ncores <span class="op">=</span> <span class="fl">4</span>,
+<p>Error (Valid ‘mctype’: ‘snow’ or ‘doMC’) occurs when ncore &gt; 1 : please ensure the version of AUCell &gt;= 1.14 or set ncore = 1.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">pbmc3k.final</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.score.html">irGSEA.score</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc3k.final</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, 
+                             slot <span class="op">=</span> <span class="st">"data"</span>, seeds <span class="op">=</span> <span class="fl">123</span>, ncores <span class="op">=</span> <span class="fl">1</span>,
                              min.cells <span class="op">=</span> <span class="fl">3</span>, min.feature <span class="op">=</span> <span class="fl">0</span>,
                              custom <span class="op">=</span> <span class="cn">F</span>, geneset <span class="op">=</span> <span class="cn">NULL</span>, msigdb <span class="op">=</span> <span class="cn">T</span>, 
                              species <span class="op">=</span> <span class="st">"Homo sapiens"</span>, category <span class="op">=</span> <span class="st">"H"</span>,  
@@ -214,8 +166,6 @@
 <span class="co">#&gt; ('-')</span>
 <span class="co">#&gt; Finish calculate AUCell scores</span>
 <span class="co">#&gt; Calculate UCell scores</span>
-<span class="co">#&gt; Loading required package: future.apply</span>
-<span class="co">#&gt; Loading required package: future</span>
 <span class="co">#&gt; Warning: Feature names cannot have underscores ('_'), replacing with dashes</span>
 <span class="co">#&gt; ('-')</span>
 
@@ -246,7 +196,7 @@
 <h2 class="hasAnchor">
 <a href="#integrate-differential-gene-set" class="anchor"></a>Integrate differential gene set</h2>
 <p>Wlicox test is perform to all enrichment score matrixes and gene sets with adjusted p value &lt; 0.05 are used to integrated through RRA. Among them, Gene sets with p value &lt; 0.05 are statistically significant and common differential in all gene sets enrichment analysis methods. All results are saved in a list.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">result.dge</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.integrate.html">irGSEA.integrate</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc3k.final</span>, 
                                group.by <span class="op">=</span> <span class="st">"seurat_annotations"</span>,
                                metadata <span class="op">=</span> <span class="cn">NULL</span>, col.name <span class="op">=</span> <span class="cn">NULL</span>,
@@ -256,24 +206,6 @@
 <span class="co">#&gt; Calculate differential gene set : UCell</span>
 <span class="co">#&gt; Calculate differential gene set : singscore</span>
 <span class="co">#&gt; Calculate differential gene set : ssgsea</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
-<span class="co">#&gt; Using Name as id variables</span>
 <span class="fu"><a href="https://rdrr.io/r/base/class.html">class</a></span><span class="op">(</span><span class="va">result.dge</span><span class="op">)</span>
 <span class="co">#&gt; [1] "list"</span></code></pre></div>
 </div>
@@ -288,47 +220,48 @@
 <h3 class="hasAnchor">
 <a href="#heatmap-plot" class="anchor"></a>heatmap plot</h3>
 <p>Show co-upregulated or co-downregulated gene sets per cluster in RRA</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">irGSEA.heatmap.plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.heatmap.html">irGSEA.heatmap</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">result.dge</span>, 
                                       method <span class="op">=</span> <span class="st">"RRA"</span>,
                                       top <span class="op">=</span> <span class="fl">50</span>, 
                                       show.geneset <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span>
 <span class="va">irGSEA.heatmap.plot</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="100%"></p>
 </div>
 <div id="bubbleplot" class="section level3">
 <h3 class="hasAnchor">
 <a href="#bubbleplot" class="anchor"></a>Bubble.plot</h3>
 <p>Show co-upregulated or co-downregulated gene sets per cluster in RRA</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">irGSEA.bubble.plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.bubble.html">irGSEA.bubble</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">result.dge</span>, 
                                     method <span class="op">=</span> <span class="st">"RRA"</span>, 
                                     top <span class="op">=</span> <span class="fl">50</span><span class="op">)</span>
 <span class="va">irGSEA.bubble.plot</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-8-1.png" width="100%"></p>
 </div>
 <div id="upset-plot" class="section level3">
 <h3 class="hasAnchor">
 <a href="#upset-plot" class="anchor"></a>upset plot</h3>
 <p>Show the intersections of significant gene sets among clusters in RRA</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<p>Don’t worry if warning happens : the condition has length &gt; 1 and only the first element will be used. It’s ok.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">irGSEA.upset.plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.upset.html">irGSEA.upset</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">result.dge</span>, 
                                   method <span class="op">=</span> <span class="st">"RRA"</span><span class="op">)</span>
 <span class="co">#&gt; Warning in if (as.character(ta_call[[1]]) == "upset_top_annotation") {: the</span>
 <span class="co">#&gt; condition has length &gt; 1 and only the first element will be used</span>
 <span class="va">irGSEA.upset.plot</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-8-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-9-1.png" width="100%"></p>
 </div>
 <div id="stacked-bar-plot" class="section level3">
 <h3 class="hasAnchor">
 <a href="#stacked-bar-plot" class="anchor"></a>Stacked bar plot</h3>
 <p>Show the intersections of significant gene sets among clusters in all methods</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">irGSEA.barplot.plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.barplot.html">irGSEA.barplot</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">result.dge</span>,
                                       method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"AUCell"</span>, <span class="st">"UCell"</span>, <span class="st">"singscore"</span>,
                                                  <span class="st">"ssgsea"</span><span class="op">)</span><span class="op">)</span>
 <span class="va">irGSEA.barplot.plot</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-9-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-10-1.png" width="100%"></p>
 </div>
 <div id="2-local-show" class="section level3">
 <h3 class="hasAnchor">
@@ -339,47 +272,47 @@
 <h3 class="hasAnchor">
 <a href="#density-scatterplot" class="anchor"></a>density scatterplot</h3>
 <p>Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE” in Ucell on UMAP plot.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">scatterplot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.density.scatterplot.html">irGSEA.density.scatterplot</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc3k.final</span>,
                              method <span class="op">=</span> <span class="st">"UCell"</span>,
                              show.geneset <span class="op">=</span> <span class="st">"HALLMARK-INFLAMMATORY-RESPONSE"</span>,
                              reduction <span class="op">=</span> <span class="st">"umap"</span><span class="op">)</span>
 <span class="va">scatterplot</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-10-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-11-1.png" width="100%"></p>
 </div>
 <div id="half-vlnplot" class="section level3">
 <h3 class="hasAnchor">
 <a href="#half-vlnplot" class="anchor"></a>half vlnplot</h3>
 <p>Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE” in Ucell among clusters.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">halfvlnplot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.halfvlnplot.html">irGSEA.halfvlnplot</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc3k.final</span>,
                                   method <span class="op">=</span> <span class="st">"UCell"</span>,
                                   show.geneset <span class="op">=</span> <span class="st">"HALLMARK-INFLAMMATORY-RESPONSE"</span><span class="op">)</span>
 <span class="va">halfvlnplot</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-11-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-12-1.png" width="100%"></p>
 </div>
 <div id="ridge-plot" class="section level3">
 <h3 class="hasAnchor">
 <a href="#ridge-plot" class="anchor"></a>ridge plot</h3>
 <p>Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE” in Ucell among clusters.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ridgeplot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.ridgeplot.html">irGSEA.ridgeplot</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc3k.final</span>,
                               method <span class="op">=</span> <span class="st">"UCell"</span>,
                               show.geneset <span class="op">=</span> <span class="st">"HALLMARK-INFLAMMATORY-RESPONSE"</span><span class="op">)</span>
 <span class="va">ridgeplot</span>
 <span class="co">#&gt; Picking joint bandwidth of 0.00533</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-12-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-13-1.png" width="100%"></p>
 </div>
 <div id="density-heatmap" class="section level3">
 <h3 class="hasAnchor">
 <a href="#density-heatmap" class="anchor"></a>density heatmap</h3>
 <p>Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE” in Ucell among clusters.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">densityheatmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.densityheatmap.html">irGSEA.densityheatmap</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc3k.final</span>,
                                         method <span class="op">=</span> <span class="st">"UCell"</span>,
                                         show.geneset <span class="op">=</span> <span class="st">"HALLMARK-INFLAMMATORY-RESPONSE"</span><span class="op">)</span>
 <span class="va">densityheatmap</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-13-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-14-1.png" width="100%"></p>
 </div>
 </div>
 </div>

@@ -444,12 +444,12 @@ irGSEA.integrate <- function(object = NULL, group.by = NULL,
     x <- lapply(x,function(y){y$gene})
     x <- RobustRankAggreg::aggregateRanks(glist = x, N = length(unique(unlist(x))))
   })
-
+  Name <- NULL
   sig.genesets.postive <- sig.genesets.postive %>%
-    reshape2::melt() %>%
+    reshape2::melt(id.vars = "Name") %>%
     dplyr::mutate(direction = "up")
   sig.genesets.negative <- sig.genesets.negative %>%
-    reshape2::melt() %>%
+    reshape2::melt(id.vars = "Name") %>%
     dplyr::mutate(direction = "down")
   sig.genesets <- rbind(sig.genesets.postive, sig.genesets.negative)
   colnames(sig.genesets)[4] <- "cluster"

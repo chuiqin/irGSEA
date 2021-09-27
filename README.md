@@ -9,9 +9,7 @@
 Integrate all single cell rank-based gene set enrichment analysis and
 easy to visualize the results.
 
-For more details, you can view it. [irGSEA](https://chuiqin.github.io/irGSEA/)
-
-## Preparation
+## Installation
 
 ``` r
 # install packages from CRAN
@@ -19,7 +17,8 @@ cran.packages <- c("msigdbr", "dplyr", "purrr", "stringr","magrittr",
                    "RobustRankAggreg", "tibble", "reshape2", "ggsci",
                    "tidyr", "aplot", "ggfun", "ggplotify", "ggridges", 
                    "gghalves", "Seurat", "SeuratObject", "methods", 
-                   "devtools", "BiocManager","data.table")
+                   "devtools", "BiocManager","data.table","doParallel",
+                   "doRNG")
 if (!requireNamespace(cran.packages, quietly = TRUE)) { 
     install.packages(cran.packages, ask = F, update = F)
 }
@@ -29,10 +28,9 @@ bioconductor.packages <- c("GSEABase", "AUCell", "SummarizedExperiment",
                            "singscore", "GSVA", "ComplexHeatmap", "ggtree", 
                            "Nebulosa")
 if (!requireNamespace(bioconductor.packages, quietly = TRUE)) { 
-    BiocManager::install.packages(bioconductor.packages, ask = F, update = F)
+    BiocManager::install(bioconductor.packages, ask = F, update = F)
 }
 
-# install packages from Github
 if (!requireNamespace("UCell", quietly = TRUE)) { 
     devtools::install_github("carmonalab/UCell")
 }
@@ -58,60 +56,10 @@ InstallData("pbmc3k")
 
 ``` r
 library(Seurat)
-#> Attaching SeuratObject
 library(SeuratData)
-#> Registered S3 method overwritten by 'cli':
-#>   method     from         
-#>   print.boxx spatstat.geom
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-
-#> Warning in if (is.na(desc)) {: the condition has length > 1 and only the first
-#> element will be used
-#> ── Installed datasets ───────────────────────────────────── SeuratData v0.2.1 ──
-#> ✓ pbmc3k 3.1.4
-#> ────────────────────────────────────── Key ─────────────────────────────────────
-#> ✓ Dataset loaded successfully
-#> > Dataset built with a newer version of Seurat than installed
-#> ❓ Unknown version of Seurat installed
 # loading dataset
 data("pbmc3k.final")
 pbmc3k.final <- UpdateSeuratObject(pbmc3k.final)
-#> Validating object structure
-#> Updating object slots
-#> Ensuring keys are in the proper strucutre
-#> Ensuring feature names don't have underscores or pipes
-#> Object representation is consistent with the most current Seurat version
 # plot
 DimPlot(pbmc3k.final, reduction = "umap",
         group.by = "seurat_annotations",label = T) + NoLegend()
@@ -124,20 +72,24 @@ DimPlot(pbmc3k.final, reduction = "umap",
 Idents(pbmc3k.final) <- pbmc3k.final$seurat_annotations
 ```
 
+## Load library
+
+``` r
+library(UCell)
+library(irGSEA)
+```
+
 ## Calculate enrichment scores
 
 calculate enrichment scores, return a Seurat object including these
 score matrix
 
+Error (Valid ‘mctype’: ‘snow’ or ‘doMC’) occurs when ncore &gt; 1 :
+please ensure the version of AUCell &gt;= 1.14 or set ncore = 1.
+
 ``` r
-library(data.table)
-library(irGSEA)
-library(UCell)
-#> Loading required package: Matrix
-Seurat::Assays(pbmc3k.final)
-#> [1] "RNA"
 pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA", 
-                             slot = "data", seeds = 123, ncores = 4,
+                             slot = "data", seeds = 123, ncores = 1,
                              min.cells = 3, min.feature = 0,
                              custom = F, geneset = NULL, msigdb = T, 
                              species = "Homo sapiens", category = "H",  
@@ -159,8 +111,6 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
 #> ('-')
 #> Finish calculate AUCell scores
 #> Calculate UCell scores
-#> Loading required package: future.apply
-#> Loading required package: future
 #> Warning: Feature names cannot have underscores ('_'), replacing with dashes
 #> ('-')
 
@@ -206,24 +156,6 @@ result.dge <- irGSEA.integrate(object = pbmc3k.final,
 #> Calculate differential gene set : UCell
 #> Calculate differential gene set : singscore
 #> Calculate differential gene set : ssgsea
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
-#> Using Name as id variables
 class(result.dge)
 #> [1] "list"
 ```
@@ -244,7 +176,7 @@ irGSEA.heatmap.plot <- irGSEA.heatmap(object = result.dge,
 irGSEA.heatmap.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
 
 ### Bubble.plot
 
@@ -257,11 +189,14 @@ irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge,
 irGSEA.bubble.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
 ### upset plot
 
 Show the intersections of significant gene sets among clusters in RRA
+
+Don’t worry if warning happens : the condition has length &gt; 1 and
+only the first element will be used. It’s ok.
 
 ``` r
 irGSEA.upset.plot <- irGSEA.upset(object = result.dge, 
@@ -271,7 +206,7 @@ irGSEA.upset.plot <- irGSEA.upset(object = result.dge,
 irGSEA.upset.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
 
 ### Stacked bar plot
 
@@ -285,7 +220,7 @@ irGSEA.barplot.plot <- irGSEA.barplot(object = result.dge,
 irGSEA.barplot.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
 
 ### 2. local show
 
@@ -305,7 +240,7 @@ scatterplot <- irGSEA.density.scatterplot(object = pbmc3k.final,
 scatterplot
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
 
 ### half vlnplot
 
@@ -319,7 +254,7 @@ halfvlnplot <- irGSEA.halfvlnplot(object = pbmc3k.final,
 halfvlnplot
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
 
 ### ridge plot
 
@@ -334,7 +269,7 @@ ridgeplot
 #> Picking joint bandwidth of 0.00533
 ```
 
-<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
 
 ### density heatmap
 
@@ -348,4 +283,4 @@ densityheatmap <- irGSEA.densityheatmap(object = pbmc3k.final,
 densityheatmap
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
