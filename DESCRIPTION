@@ -15,6 +15,7 @@ Imports:
     aplot,
     AUCell,
     ComplexHeatmap,
+    data.table,
     dplyr,
     ggfun,
     gghalves,

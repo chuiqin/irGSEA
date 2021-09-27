@@ -16,10 +16,11 @@ knitr::opts_chunk$set(
 # irGSEA
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
-Integrate all single cell rank-based gene set enrichment analysis and easy to 
-visualize the results.
+Integrate all single cell rank-based gene set enrichment analysis and
+easy to visualize the results.
 
 ## Preparation
 
@@ -30,7 +31,7 @@ cran.packages <- c("msigdbr", "dplyr", "purrr", "stringr","magrittr",
                    "RobustRankAggreg", "tibble", "reshape2", "ggsci",
                    "tidyr", "aplot", "ggfun", "ggplotify", "ggridges", 
                    "gghalves", "Seurat", "SeuratObject", "methods", 
-                   "devtools", "BiocManager")
+                   "devtools", "BiocManager","data.table")
 if (!requireNamespace(cran.packages, quietly = TRUE)) { 
     install.packages(cran.packages, ask = F, update = F)
 }
@@ -53,12 +54,11 @@ if (!requireNamespace("irGSEA", quietly = TRUE)) {
 
 ```
 
-
-
 ## load example dataset
 
 load PBMC dataset by R package SeuratData
-```r
+
+``` r
 # devtools::install_github('satijalab/seurat-data')
 library(SeuratData)
 # view all available datasets
@@ -68,7 +68,6 @@ InstallData("pbmc3k")
 # the details of pbmc3k.final
 ?pbmc3k.final
 ```
-
 
 ```{r}
 library(Seurat)
@@ -83,13 +82,17 @@ DimPlot(pbmc3k.final, reduction = "umap",
 Idents(pbmc3k.final) <- pbmc3k.final$seurat_annotations
 
 ```
+
 ## Calculate enrichment scores
 
-calculate enrichment scores, return a Seurat object including these score matrix
-
+calculate enrichment scores, return a Seurat object including these
+score matrix
 
 ```{r}
-Assays(pbmc3k.final)
+library(data.table)
+library(irGSEA)
+library(UCell)
+Seurat::Assays(pbmc3k.final)
 pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA", 
                              slot = "data", seeds = 123, ncores = 4,
                              min.cells = 3, min.feature = 0,
@@ -100,16 +103,17 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
                                         "ssgsea"),
                              aucell.MaxRank = NULL, ucell.MaxRank = NULL, 
                              kcdf = 'Gaussian')
-Assays(pbmc3k.final)
+Seurat::Assays(pbmc3k.final)
 
 ```
 
 ## Integrate differential gene set
 
-Wlicox test is perform to all enrichment score matrixes and gene sets with 
-adjusted p value < 0.05 are used to integrated through RRA. Among them, Gene
-sets with p value < 0.05 are statistically significant and common differential 
-in all gene sets enrichment analysis methods. All results are saved in a list.
+Wlicox test is perform to all enrichment score matrixes and gene sets
+with adjusted p value \< 0.05 are used to integrated through RRA. Among
+them, Gene sets with p value \< 0.05 are statistically significant and
+common differential in all gene sets enrichment analysis methods. All
+results are saved in a list.
 
 ```{r}
 result.dge <- irGSEA.integrate(object = pbmc3k.final, 
@@ -121,7 +125,9 @@ class(result.dge)
 ```
 
 ## Visualization
+
 ### 1. Global show
+
 ### heatmap plot
 
 Show co-upregulated or co-downregulated gene sets per cluster in RRA
@@ -145,11 +151,9 @@ irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge,
 irGSEA.bubble.plot
 ```
 
-
 ### upset plot
 
 Show the intersections of significant gene sets among clusters in RRA
-
 
 ```{r}
 irGSEA.upset.plot <- irGSEA.upset(object = result.dge, 
@@ -157,10 +161,10 @@ irGSEA.upset.plot <- irGSEA.upset(object = result.dge,
 irGSEA.upset.plot
 ```
 
-
 ### Stacked bar plot
 
-Show the intersections of significant gene sets among clusters in all methods
+Show the intersections of significant gene sets among clusters in all
+methods
 
 ```{r}
 irGSEA.barplot.plot <- irGSEA.barplot(object = result.dge,
@@ -170,12 +174,9 @@ irGSEA.barplot.plot
 
 ```
 
-
-
-
 ### 2. local show
 
-Show the expression and distribution of special gene sets in special 
+Show the expression and distribution of special gene sets in special
 gene set enrichment analysis method
 
 ### density scatterplot
@@ -191,7 +192,6 @@ scatterplot <- irGSEA.density.scatterplot(object = pbmc3k.final,
 scatterplot
 ```
 
-
 ### half vlnplot
 
 Show the expression and distribution of "HALLMARK-INFLAMMATORY-RESPONSE"
@@ -203,7 +203,6 @@ halfvlnplot <- irGSEA.halfvlnplot(object = pbmc3k.final,
                                   show.geneset = "HALLMARK-INFLAMMATORY-RESPONSE")
 halfvlnplot
 ```
-
 
 ### ridge plot
 
@@ -218,8 +217,6 @@ ridgeplot
 
 ```
 
-
-
 ### density heatmap
 
 Show the expression and distribution of "HALLMARK-INFLAMMATORY-RESPONSE"
@@ -231,8 +228,3 @@ densityheatmap <- irGSEA.densityheatmap(object = pbmc3k.final,
                                         show.geneset = "HALLMARK-INFLAMMATORY-RESPONSE")
 densityheatmap
 ```
-
-
-
-
-
