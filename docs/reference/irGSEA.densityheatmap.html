@@ -123,6 +123,8 @@
   show.geneset <span class='op'>=</span> <span class='cn'>NULL</span>,
   group.by <span class='op'>=</span> <span class='cn'>NULL</span>,
   color.cluster <span class='op'>=</span> <span class='cn'>NULL</span>,
+  heatmap_width <span class='op'>=</span> <span class='fl'>12</span>,
+  heatmap_height <span class='op'>=</span> <span class='fl'>12</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
 
@@ -152,6 +154,16 @@ column of metadata.</p></td>
       <th>color.cluster</th>
       <td><p>A vector. Default "ggsci::pal_igv()(the number of colnames
 of enrichment score matrix)" when it is set to NULL.</p></td>
+    </tr>
+    <tr>
+      <th>heatmap_width</th>
+      <td><p>Width of the whole heatmap (including heatmap
+components), default 12.</p></td>
+    </tr>
+    <tr>
+      <th>heatmap_height</th>
+      <td><p>Heigh of the whole heatmap (including heatmap
+components), default 12.</p></td>
     </tr>
     <tr>
       <th>...</th>

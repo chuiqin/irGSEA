@@ -158,7 +158,7 @@ Show co-upregulated or co-downregulated gene sets per cluster in RRA.
 If error (argument "caller_env" is missing, with no default) occurs :
 please uninstall ggtree and run "remotes::install_github("YuLab-SMU/ggtree")".
 
-```{r fig.height=6, fig.width=10}
+```{r fig.height=8, fig.width=10}
 irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge, 
                                     method = "RRA", 
                                     top = 50)
@@ -183,7 +183,7 @@ irGSEA.upset.plot
 Show the intersections of significant gene sets among clusters in all
 methods
 
-```{r}
+```{r fig.height=10, fig.width=10}
 irGSEA.barplot.plot <- irGSEA.barplot(object = result.dge,
                                       method = c("AUCell", "UCell", "singscore",
                                                  "ssgsea"))

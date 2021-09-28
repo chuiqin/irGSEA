@@ -10,6 +10,8 @@ irGSEA.densityheatmap(
   show.geneset = NULL,
   group.by = NULL,
   color.cluster = NULL,
+  heatmap_width = 12,
+  heatmap_height = 12,
   ...
 )
 }
@@ -27,6 +29,12 @@ column of metadata.}
 
 \item{color.cluster}{A vector. Default "ggsci::pal_igv()(the number of colnames
 of enrichment score matrix)" when it is set to NULL.}
+
+\item{heatmap_width}{Width of the whole heatmap (including heatmap
+components), default 12.}
+
+\item{heatmap_height}{Heigh of the whole heatmap (including heatmap
+components), default 12.}
 
 \item{...}{More parameters pass to \code{\link[ComplexHeatmap]{densityHeatmap}}}
 }

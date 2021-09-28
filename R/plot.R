@@ -1023,6 +1023,10 @@ irGSEA.ridgeplot <- function(object = NULL, method = NULL,
 #' column of metadata.
 #' @param color.cluster A vector. Default "ggsci::pal_igv()(the number of colnames
 #' of enrichment score matrix)" when it is set to NULL.
+#' @param heatmap_width Width of the whole heatmap (including heatmap
+#' components), default 12.
+#' @param heatmap_height Heigh of the whole heatmap (including heatmap
+#' components), default 12.
 #' @param ... More parameters pass to \code{\link[ComplexHeatmap]{densityHeatmap}}
 #'
 #' @return density heatmap
@@ -1054,7 +1058,8 @@ irGSEA.ridgeplot <- function(object = NULL, method = NULL,
 #'
 irGSEA.densityheatmap <- function(object = NULL, method = NULL,
                                   show.geneset = NULL, group.by = NULL,
-                                  color.cluster = NULL, ...){
+                                  color.cluster = NULL, heatmap_width = 12,
+                                  heatmap_height = 12, ...){
   # pretreatment
   ident <- NULL
   if ((! all(method %in% Seurat::Assays(object))) | (length(method) > 1) | (purrr::is_null(method))) {
@@ -1106,13 +1111,20 @@ irGSEA.densityheatmap <- function(object = NULL, method = NULL,
     purrr::map(~ .x %>% dplyr::pull(.))
 
 
-  scores.densityheatmap <- ggplotify::as.ggplot(ComplexHeatmap::densityHeatmap(scores.densityheatmap,
-                                                                               title = "Distribution",
-                                                                               ylab = custom.geneset,
-                                                                               title_gp = grid::gpar(fontsize = 10),
-                                                                               column_names_gp = grid::gpar(fontsize = 10),
-                                                                               column_names_rot = 45,
-                                                                               ...))
+  scores.densityheatmap <- ComplexHeatmap::densityHeatmap(scores.densityheatmap,
+                                                          title = paste0(method,"'s Distribution"),
+                                                          ylab = custom.geneset,
+                                                          title_gp = grid::gpar(fontsize = 9),
+                                                          ylab_gp = grid::gpar(fontsize = 8),
+                                                          tick_label_gp = grid::gpar(fontsize = 9),
+                                                          column_names_gp = grid::gpar(fontsize = 9),
+                                                          column_names_rot = 45,
+                                                          show_heatmap_legend = T,
+                                                          heatmap_width = grid::unit(heatmap_width, "cm"),
+                                                          heatmap_height = grid::unit(heatmap_height, "cm"),
+                                                          ...)
+  scores.densityheatmap <- ggplotify::as.ggplot(
+    grid::grid.grabExpr(ComplexHeatmap::draw(scores.densityheatmap)))
 
   return(scores.densityheatmap)
 
