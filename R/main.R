@@ -175,22 +175,53 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
   #### calculate scores
   if ("AUCell" %in% method) {
     message("Calculate AUCell scores")
-    aucell.rank <- AUCell::AUCell_buildRankings(my.matrix,
+    aucell.rank <- tryCatch(as.data.frame(my.matrix), error = identity)
+    if (methods::is(aucell.rank, "error")) {
+      cut.times <- ceiling(ncol(my.matrix)/5000)
+      my.matrix.list <- split(seq_along(colnames(my.matrix)), cut(seq_along(colnames(my.matrix)), cut.times))
+      aucell.scores.list <- list()
+      for (k in seq_along(my.matrix.list)) {
+        # calculate the rank matrix
+        aucell.rank <- AUCell::AUCell_buildRankings(my.matrix[, my.matrix.list[[k]]],
+                                                    nCores = ncores,
+                                                    plotStats = F,
+                                                    verbose = F)
+        h.gsets.list.aucell <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
+        if (purrr::is_null(aucell.MaxRank)){aucell.MaxRank = ceiling(0.05 * nrow(aucell.rank))}
+        aucell.scores <- AUCell::AUCell_calcAUC(h.gsets.list.aucell,
+                                                aucell.rank,
                                                 nCores = ncores,
-                                                plotStats = F,
+                                                aucMaxRank = aucell.MaxRank,
                                                 verbose = F)
-    h.gsets.list.aucell <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
-    if (purrr::is_null(aucell.MaxRank)){aucell.MaxRank = ceiling(0.05 * nrow(aucell.rank))}
-    aucell.scores <- AUCell::AUCell_calcAUC(h.gsets.list.aucell,
-                                            aucell.rank,
-                                            nCores = ncores,
-                                            aucMaxRank = aucell.MaxRank,
-                                            verbose = F)
-    aucell.scores <- SummarizedExperiment::assay(aucell.scores)
-    object[["AUCell"]] <- SeuratObject::CreateAssayObject(counts = aucell.scores)
-    object <- SeuratObject::SetAssayData(object, slot = "scale.data",
-                                         new.data = aucell.scores, assay = "AUCell")
-    message("Finish calculate AUCell scores")
+        aucell.scores <- SummarizedExperiment::assay(aucell.scores)
+        aucell.scores.list[[k]] <- aucell.scores
+      }
+      aucell.scores.list <- do.call(cbind, aucell.scores.list)
+      object[["AUCell"]] <- SeuratObject::CreateAssayObject(counts = aucell.scores.list)
+      object <- SeuratObject::SetAssayData(object, slot = "scale.data",
+                                           new.data = aucell.scores.list, assay = "AUCell")
+      message("Finish calculate AUCell scores")
+
+    }else{
+      aucell.rank <- AUCell::AUCell_buildRankings(my.matrix,
+                                                  nCores = ncores,
+                                                  plotStats = F,
+                                                  verbose = F)
+      h.gsets.list.aucell <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
+      if (purrr::is_null(aucell.MaxRank)){aucell.MaxRank = ceiling(0.05 * nrow(aucell.rank))}
+      aucell.scores <- AUCell::AUCell_calcAUC(h.gsets.list.aucell,
+                                              aucell.rank,
+                                              nCores = ncores,
+                                              aucMaxRank = aucell.MaxRank,
+                                              verbose = F)
+      aucell.scores <- SummarizedExperiment::assay(aucell.scores)
+      object[["AUCell"]] <- SeuratObject::CreateAssayObject(counts = aucell.scores)
+      object <- SeuratObject::SetAssayData(object, slot = "scale.data",
+                                           new.data = aucell.scores, assay = "AUCell")
+      message("Finish calculate AUCell scores")
+    }
+
+
   }
   if ("UCell" %in% method) {
     message("Calculate UCell scores")
@@ -210,54 +241,98 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
   }
   if ("singscore" %in% method) {
     message("Calculate singscore scores")
-    # calculate the rank matrix
-    attemptsLeft <- 20
-    while(attemptsLeft > 0){
-      singscore.rank <- tryCatch(singscore::rankGenes(as.data.frame(my.matrix)), warning = identity)
-      if(methods::is(singscore.rank, "warning")){
-        attemptsLeft <- attemptsLeft - 1
-        Sys.sleep(5)
-      }else{attemptsLeft <- 0}}
 
-    # calculate separately
-    singscore.scores <- list()
-    for (i in seq_along(h.gsets.list)){
-      if (any(stringr::str_detect(h.gsets.list[[i]], pattern = "\\+$|-$"))) {
-        h.gsets.list.positive <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)\\+")[,2] %>% purrr::discard(is.na)
-        h.gsets.list.negative <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)-")[,2] %>% purrr::discard(is.na)
-        if (length(h.gsets.list.positive)==0) {
-          singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-                                                          upSet = h.gsets.list.negative)
-        }
-        if (length(h.gsets.list.negative)==0) {
-          singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-                                                          upSet = h.gsets.list.positive)
-        }
-        if ((length(h.gsets.list.positive)!=0)&(length(h.gsets.list.negative)!=0)) {
-          singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-                                                          upSet = h.gsets.list.positive,
-                                                          downSet = h.gsets.list.negative)
-        }
+    singscore.rank <- tryCatch(singscore::rankGenes(as.data.frame(my.matrix)), error = identity)
+    if (methods::is(singscore.rank, "error")) {
+      cut.times <- ceiling(ncol(my.matrix)/5000)
+      my.matrix.list <- split(seq_along(colnames(my.matrix)), cut(seq_along(colnames(my.matrix)), cut.times))
+      singscore.scores.list <- list()
+      for (k in seq_along(my.matrix.list)) {
+        # calculate the rank matrix
+        singscore.rank <- rankGenes(as.data.frame(my.matrix[, my.matrix.list[[k]]]))
+        # calculate separately
+        singscore.scores <- list()
 
-      }else{
-        singscore.scores[[i]] <- singscore::simpleScore(singscore.rank, upSet = h.gsets.list[[i]])
+        for (i in seq_along(h.gsets.list)){
+          if (any(stringr::str_detect(h.gsets.list[[i]], pattern = "\\+$|-$"))) {
+            h.gsets.list.positive <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)\\+")[,2] %>% purrr::discard(is.na)
+            h.gsets.list.negative <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)-")[,2] %>% purrr::discard(is.na)
+            if (length(h.gsets.list.positive)==0) {
+              singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
+                                                              upSet = h.gsets.list.negative)
+            }
+            if (length(h.gsets.list.negative)==0) {
+              singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
+                                                              upSet = h.gsets.list.positive)
+            }
+            if ((length(h.gsets.list.positive)!=0)&(length(h.gsets.list.negative)!=0)) {
+              singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
+                                                              upSet = h.gsets.list.positive,
+                                                              downSet = h.gsets.list.negative)
+            }
+
+          }else{
+            singscore.scores[[i]] <- singscore::simpleScore(singscore.rank, upSet = h.gsets.list[[i]])
+          }
+          TotalScore <- NULL
+          singscore.scores[[i]] <- singscore.scores[[i]] %>%
+            dplyr::select(TotalScore) %>%
+            magrittr::set_colnames(names(h.gsets.list)[i])}
+        names(singscore.scores) <- names(h.gsets.list)
+        singscore.scores <- do.call(cbind, singscore.scores)
+        singscore.scores.list[[k]] <- singscore.scores
       }
-      TotalScore <- NULL
-      singscore.scores[[i]] <- singscore.scores[[i]] %>%
-        dplyr::select(TotalScore) %>%
-        magrittr::set_colnames(names(h.gsets.list)[i])}
-    names(singscore.scores) <- names(h.gsets.list)
-    singscore.scores <- do.call(cbind, singscore.scores)
-    object[["singscore"]] <- SeuratObject::CreateAssayObject(counts = t(singscore.scores))
-    object <- SeuratObject::SetAssayData(object, slot = "scale.data",
-                                         new.data = t(singscore.scores), assay = "singscore")
-    message("Finish calculate singscore scores")
+      singscore.scores.list <- do.call(rbind, singscore.scores.list)
+      object[["singscore"]] <- SeuratObject::CreateAssayObject(counts = t(singscore.scores.list))
+      object <- SeuratObject::SetAssayData(object, slot = "scale.data",
+                                           new.data = t(singscore.scores.list), assay = "singscore")
+      message("Finish calculate singscore scores")
+
+    }else{
+      # calculate the rank matrix
+      singscore.rank <- singscore::rankGenes(as.data.frame(my.matrix))
+      # calculate separately
+      singscore.scores <- list()
+      for (i in seq_along(h.gsets.list)){
+        if (any(stringr::str_detect(h.gsets.list[[i]], pattern = "\\+$|-$"))) {
+          h.gsets.list.positive <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)\\+")[,2] %>% purrr::discard(is.na)
+          h.gsets.list.negative <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)-")[,2] %>% purrr::discard(is.na)
+          if (length(h.gsets.list.positive)==0) {
+            singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
+                                                            upSet = h.gsets.list.negative)
+          }
+          if (length(h.gsets.list.negative)==0) {
+            singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
+                                                            upSet = h.gsets.list.positive)
+          }
+          if ((length(h.gsets.list.positive)!=0)&(length(h.gsets.list.negative)!=0)) {
+            singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
+                                                            upSet = h.gsets.list.positive,
+                                                            downSet = h.gsets.list.negative)
+          }
+
+        }else{
+          singscore.scores[[i]] <- singscore::simpleScore(singscore.rank, upSet = h.gsets.list[[i]])
+        }
+        TotalScore <- NULL
+        singscore.scores[[i]] <- singscore.scores[[i]] %>%
+          dplyr::select(TotalScore) %>%
+          magrittr::set_colnames(names(h.gsets.list)[i])}
+      names(singscore.scores) <- names(h.gsets.list)
+      singscore.scores <- do.call(cbind, singscore.scores)
+      object[["singscore"]] <- SeuratObject::CreateAssayObject(counts = t(singscore.scores))
+      object <- SeuratObject::SetAssayData(object, slot = "scale.data",
+                                           new.data = t(singscore.scores), assay = "singscore")
+      message("Finish calculate singscore scores")
+    }
+
+
 
   }
   if ("ssgsea" %in% method) {
     message("Calculate ssgsea scores")
     h.gsets.list.ssgsea <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
-    ssgsea.scores <- GSVA::gsva(as.matrix(my.matrix),
+    ssgsea.scores <- GSVA::gsva(my.matrix,
                                 h.gsets.list.ssgsea,
                                 method = "ssgsea",
                                 kcdf = kcdf,
@@ -266,7 +341,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                                 verbose = F)
     object[["ssgsea"]] <- SeuratObject::CreateAssayObject(counts = ssgsea.scores)
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
-                                         new.data = ssgsea.scores, assay = "ssgsea")
+                                         new.data = as.matrix(ssgsea.scores), assay = "ssgsea")
     message("Finish calculate ssgsea scores")
   }
   return(object)
