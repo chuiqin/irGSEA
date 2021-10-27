@@ -14,6 +14,7 @@
 #' @param significance.color A vector. Default "c("#D0DFE6FF","#f87669")" when
 #' it is set to NULL.
 #' @param cluster_rows Whether to make cluster on rows. Defaul True.
+#' @param cluster.levels A vector equal to the number of clusters.
 #'
 #' @return bubble plot
 #' @export
@@ -52,7 +53,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
                           top = 50, show.geneset = NULL,
                           cluster.color = NULL, direction.color = NULL,
                           significance.color = NULL,
-                          cluster_rows = T){
+                          cluster_rows = T, cluster.levels = NULL){
   # pretreatment
   cluster <- NULL
   direction <- NULL
@@ -74,6 +75,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
     object[1:4] <- object[1:4] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
   }
   # matrix
+
   sig.genesets.bubble <- object[[method]] %>%
     dplyr::mutate(cell = stringr::str_c(cluster, direction, sep = "_")) %>%
     dplyr::select(c("Name", "pvalue", "cell")) %>%
@@ -112,6 +114,14 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
                   significance = dplyr::if_else(pvalue == ">= 0.05", "no significant", "significant")) %>%
     dplyr::mutate(value = dplyr::if_else(significance == "no significant", 0, 1))
 
+  # set levels of cluster
+  if (! purrr::is_null(cluster.levels)) {
+    cell.levels <- unlist(lapply(cluster.levels, function(x){paste(x, c("up","down"), sep = "_")}))
+    sig.genesets.bubble <- sig.genesets.bubble %>%
+      dplyr::mutate(cluster = factor(cluster, levels = cluster.levels)) %>%
+      dplyr::mutate(cell = factor(cell, levels = cell.levels))
+  }
+
   # set color
   if (purrr::is_null(cluster.color)) {
     cluster.color <- ggsci::pal_igv()(length(unique(sig.genesets.bubble$cluster)))
@@ -127,6 +137,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
                    axis.ticks.x = ggplot2::element_blank(),
                    panel.grid = ggplot2::element_blank()) +
     ggplot2::labs(x = NULL, y = NULL)
+
   # set color
   if (purrr::is_null(direction.color)) {
     direction.color <- c("#4575B4","#D73027")
@@ -165,6 +176,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
     dplyr::select(c(Name, cell, value)) %>%
     tidyr::spread(cell, value) %>%
     tibble::column_to_rownames(var = "Name")
+
   # row tree
   phr <- ggtree::ggtree(stats::hclust(stats::dist(sig.genesets.bubble.matrix)))
   # combine tree
@@ -182,12 +194,6 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
   return(sig.genesets.bubble.plot)
 
 }
-
-
-
-
-
-
 
 
 #' Heatmap plot
@@ -211,6 +217,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
 #' components), default 17.
 #' @param heatmap.heigh Height of the whole heatmap (including heatmap
 #' components), default 13.
+#' @param cluster.levels A vector equal to the number of clusters.
 #' @param ... More parameters pass to \code{\link[ComplexHeatmap]{Heatmap}}
 #'
 #' @return heatmap plot
@@ -252,7 +259,8 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
                            cluster_rows = T,
                            significance.color = NULL, cluster.color = NULL,
                            direction.color = NULL, rowname.fointsize = 7,
-                           heatmap.width = 17, heatmap.heigh = 13, ...
+                           heatmap.width = 17, heatmap.heigh = 13,
+                           cluster.levels = NULL, ...
 ){
   # pretreatment
   if (! purrr::is_list(object)) {
@@ -289,6 +297,12 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
     tidyr::spread(cell, pvalue, fill = " ") %>%
     tibble::column_to_rownames(var = "Name")
 
+  if (! purrr::is_null(cluster.levels)) {
+    heatmap.levels <- unlist(lapply(cluster.levels, function(x){paste(x, c("up","down"), sep = "_")}))
+    sig.genesets.heatmap <- sig.genesets.heatmap %>% dplyr::select(heatmap.levels)
+    sig.genesets.heatmap.text <- sig.genesets.heatmap.text %>% dplyr::select(heatmap.levels)
+  }
+
   # top rows
   if (purrr::is_null(show.geneset)) {
     sig.genesets.heatmap <- sig.genesets.heatmap %>% dplyr::slice_head(n = top)
@@ -311,6 +325,7 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
   if (purrr::is_null(cluster.color)) {
     cluster.color <- ggsci::pal_igv()(length(unique(sig.genesets.heatmap.cluster)))
   }
+
   if (purrr::is_null(direction.color)) {
     direction.color <- c("#4575B4","#D73027")
   }
@@ -323,7 +338,7 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
                                                         col = list(Cluster = c(structure(cluster.color,
                                                                                          names = unique(sig.genesets.heatmap.cluster))),
                                                                    Direction = c(structure(direction.color,
-                                                                                           names = unique(sig.genesets.heatmap.direction)))))
+                                                                                           names = c("down","up")))))
   # heatmap body
   if (purrr::is_null(significance.color)) {
     significance.color <- structure(c("#D0DFE6FF","#f87669"), names = c(0,1))
@@ -335,7 +350,12 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
     dplyr::mutate(value = dplyr::if_else(value=="no significant", 0, 1)) %>%
     tidyr::spread(cell, value) %>%
     tibble::column_to_rownames(var = "Name")
+  if (! purrr::is_null(cluster.levels)) {
+    heatmap.levels <- unlist(lapply(cluster.levels, function(x){paste(x, c("up","down"), sep = "_")}))
+    sig.genesets.heatmap <- sig.genesets.heatmap %>% dplyr::select(heatmap.levels)
+  }
   sig.genesets.heatmap <- as.matrix(sig.genesets.heatmap)
+
   heatmap.body <- ComplexHeatmap::Heatmap(sig.genesets.heatmap,
                                           heatmap_width = grid::unit(heatmap.width, "cm"),
                                           heatmap_height = grid::unit(heatmap.heigh, "cm"),
@@ -404,9 +424,21 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
 #' @param cluster.color A vector. Default "ggsci::pal_igv()(the number of colnames
 #' of enrichment score matrix)" when it is set to NULL.
 #' @param bar.color A character. Default "black" when it is set to NULL.
+#' @param cluster.levels A vector equal to the number of clusters.
+#' @param mode A character. It should be one of the followling : distinct,
+#' intersect, or union. Default distinct. It represents the mode for forming
+#' the combination set. see Mode section \url{https://jokergoo.github.io/ComplexHeatmap-reference/book/upset-plot.html}
+#' for details.
+#' @param set.size The minimal combination set size. Default 1.
+#' @param set.degree A vector. Show all combination sets when it set to NULL.
+#' It would show different combination set when it is set to different number.
+#' For example, it only show the interactions among two cluster or three cluster
+#' when it's set to 2 or 3.
+#' @param table.generate Deault FALSE. It will output a list including all
+#' combination sets and their gene sets when it set to TRUE.
 #' @param ... More parameters pass to \code{\link[ComplexHeatmap]{UpSet}}
 #'
-#' @return upset plot
+#' @return upset plot or list
 #' @export
 #'
 #' @examples
@@ -440,7 +472,10 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
 irGSEA.upset <- function(object = NULL, method = "RRA",
                          upset.width = 13, upset.height = 7,
                          title.size = 10, text.size = 9,
-                         cluster.color = NULL, bar.color = "black", ...){
+                         cluster.color = NULL, bar.color = "black",
+                         cluster.levels = NULL, mode = "distinct",
+                         set.size = 1, set.degree = NULL, table.generate = F,
+                         ...){
   # pretreatment
   if (! purrr::is_list(object)) {
     stop("object should be a list.")
@@ -466,11 +501,37 @@ irGSEA.upset <- function(object = NULL, method = "RRA",
     dplyr::group_split(cluster,.keep = F) %>%
     purrr::set_names(sig.genesets.upset.names)
   sig.genesets.upset <- lapply(sig.genesets.upset, function(x){x <- x$Name})
+  # set levels of cluster
+  if (! purrr::is_null(cluster.levels)) {
+    sig.genesets.upset <- sig.genesets.upset[cluster.levels]
+  }
 
-  # plot
-  m <- ComplexHeatmap::make_comb_mat(sig.genesets.upset)
-  m <- m[ComplexHeatmap::comb_degree(m) > 0]
+  # matrix
+  m <- ComplexHeatmap::make_comb_mat(sig.genesets.upset, mode = mode)
+  # degree
+  if (purrr::is_null(set.degree)) {
+    m <- m[ComplexHeatmap::comb_degree(m) > 0]
+  }else{
+    m <- m[ComplexHeatmap::comb_degree(m) %in% c(set.degree)]
+  }
+  # set size
+  m <- m[ComplexHeatmap::comb_size(m) >= set.size]
+
+  # set levels of cluster
   ss <- ComplexHeatmap::set_size(m)
+  if (! purrr::is_null(cluster.levels)) {
+    cluster.order <- cluster.levels
+  }else{
+    cluster.order <- order(ss)
+  }
+
+  # table
+  if (table.generate == T) {
+    comb.list <- lapply(ComplexHeatmap::comb_name(m), function(i){ComplexHeatmap::extract_comb(m, i)})
+    names(comb.list) <- ComplexHeatmap::comb_name(m, readable = TRUE)
+    return(comb.list)
+  }
+  # plot
   cs <- ComplexHeatmap::comb_size(m)
   ht <- ComplexHeatmap::UpSet(m,
                               bg_col = "#D0DFE6FF",
@@ -478,7 +539,7 @@ irGSEA.upset <- function(object = NULL, method = "RRA",
                               heatmap_height = grid::unit(upset.height, "cm"),
                               column_title = method,
                               column_title_gp = grid::gpar(fontsize = title.size),
-                              set_order = order(ss),
+                              set_order = cluster.order,
                               comb_order = order(ComplexHeatmap::comb_degree(m), -cs),
                               top_annotation = ComplexHeatmap::HeatmapAnnotation(
                                 "Intersections" = ComplexHeatmap::anno_barplot(cs,
@@ -539,6 +600,7 @@ irGSEA.upset <- function(object = NULL, method = "RRA",
 #' of enrichment score matrix)" when it is set to NULL.
 #' @param color.method A vector. Default "ggsci::pal_igv()(the number of methods
 #' )" when it is set to NULL.
+#' @param cluster.levels A vector equal to the number of clusters.
 #'
 #'
 #' @return stacked bar plot
@@ -571,7 +633,8 @@ irGSEA.upset <- function(object = NULL, method = "RRA",
 #'
 irGSEA.barplot <- function(object = NULL, method = NULL,
                            significance.color = NULL,
-                           color.cluster = NULL, color.method = NULL){
+                           color.cluster = NULL, color.method = NULL,
+                           cluster.levels = NULL){
   # pretreatment
   if (! purrr::is_list(object)) {
     stop("object should be a list.")
@@ -613,6 +676,14 @@ irGSEA.barplot <- function(object = NULL, method = NULL,
     dplyr::arrange(cluster, method) %>%
     dplyr::mutate(cell = factor(cell, levels = unique(cell))) %>%
     dplyr::filter(method %in% tidyselect::all_of(method))
+
+  # set levels of cluster
+  if (! purrr::is_null(cluster.levels)) {
+    cell.levels <- unlist(lapply(cluster.levels, function(x){paste(x, method, sep = "_")}))
+    sig.genesets.barplot <- sig.genesets.barplot %>%
+      dplyr::mutate(cluster = factor(cluster, levels = cluster.levels)) %>%
+      dplyr::mutate(cell = factor(cell, levels = cell.levels))
+  }
 
   # set color
   if (purrr::is_null(significance.color)) {
@@ -790,6 +861,7 @@ irGSEA.density.scatterplot <- function(object = NULL, method = NULL,
 #' column of metadata.
 #' @param color.cluster A vector. Default "ggsci::pal_igv()(the number of colnames
 #' of enrichment score matrix)" when it is set to NULL.
+#' @param cluster.levels A vector equal to the number of clusters.
 #'
 #' @return half vlnplot
 #' @export
@@ -820,7 +892,7 @@ irGSEA.density.scatterplot <- function(object = NULL, method = NULL,
 #'
 irGSEA.halfvlnplot <- function(object = NULL, method = NULL,
                                show.geneset = NULL, group.by = NULL,
-                               color.cluster = NULL){
+                               color.cluster = NULL, cluster.levels = NULL){
   # pretreatment
   ident <- NULL
   geneset <- NULL
@@ -837,6 +909,10 @@ irGSEA.halfvlnplot <- function(object = NULL, method = NULL,
   }
   # factors are sorted alphabetically
   anno.ident <- as.factor(as.character(anno.ident))
+  # set levels of cluster
+  if (! purrr::is_null(cluster.levels)) {
+    anno.ident <- factor(anno.ident, levels = cluster.levels)
+  }
   SeuratObject::Idents(object) <- anno.ident
 
   # set colors
@@ -902,6 +978,7 @@ irGSEA.halfvlnplot <- function(object = NULL, method = NULL,
 #' column of metadata.
 #' @param color.cluster A vector. Default "ggsci::pal_igv()(the number of colnames
 #' of enrichment score matrix)" when it is set to NULL.
+#' @param cluster.levels A vector equal to the number of clusters.
 #' @param ... More parameters pass to \code{\link[ggridges]{geom_density_ridges}}
 #'
 #' @return ridge plot
@@ -933,7 +1010,7 @@ irGSEA.halfvlnplot <- function(object = NULL, method = NULL,
 #'
 irGSEA.ridgeplot <- function(object = NULL, method = NULL,
                              show.geneset = NULL, group.by = NULL,
-                             color.cluster = NULL, ...){
+                             color.cluster = NULL, cluster.levels = NULL, ...){
   # pretreatment
   ident <- NULL
   geneset <- NULL
@@ -950,6 +1027,10 @@ irGSEA.ridgeplot <- function(object = NULL, method = NULL,
   }
   # factors are sorted alphabetically
   anno.ident <- as.factor(as.character(anno.ident))
+  # set levels of cluster
+  if (! purrr::is_null(cluster.levels)) {
+    anno.ident <- factor(anno.ident, levels = cluster.levels)
+  }
   SeuratObject::Idents(object) <- anno.ident
 
   # set colors
@@ -1021,12 +1102,11 @@ irGSEA.ridgeplot <- function(object = NULL, method = NULL,
 #' enrichment score matrix.
 #' @param group.by Default ident when it is set to NULL. You can specify other
 #' column of metadata.
-#' @param color.cluster A vector. Default "ggsci::pal_igv()(the number of colnames
-#' of enrichment score matrix)" when it is set to NULL.
 #' @param heatmap_width Width of the whole heatmap (including heatmap
 #' components), default 12.
 #' @param heatmap_height Heigh of the whole heatmap (including heatmap
 #' components), default 12.
+#' @param cluster.levels A vector equal to the number of clusters.
 #' @param ... More parameters pass to \code{\link[ComplexHeatmap]{densityHeatmap}}
 #'
 #' @return density heatmap
@@ -1058,8 +1138,8 @@ irGSEA.ridgeplot <- function(object = NULL, method = NULL,
 #'
 irGSEA.densityheatmap <- function(object = NULL, method = NULL,
                                   show.geneset = NULL, group.by = NULL,
-                                  color.cluster = NULL, heatmap_width = 12,
-                                  heatmap_height = 12, ...){
+                                  heatmap_width = 12, heatmap_height = 12,
+                                  cluster.levels = NULL, ...){
   # pretreatment
   ident <- NULL
   if ((! all(method %in% Seurat::Assays(object))) | (length(method) > 1) | (purrr::is_null(method))) {
@@ -1075,12 +1155,11 @@ irGSEA.densityheatmap <- function(object = NULL, method = NULL,
   }
   # factors are sorted alphabetically
   anno.ident <- as.factor(as.character(anno.ident))
-  SeuratObject::Idents(object) <- anno.ident
-
-  # set colors
-  if (purrr::is_null(color.cluster)) {
-    color.cluster <- ggsci::pal_igv()(length(levels(object)))
+  # set levels of cluster
+  if (! purrr::is_null(cluster.levels)) {
+    anno.ident <- factor(anno.ident, levels = cluster.levels)
   }
+  SeuratObject::Idents(object) <- anno.ident
 
   # geneset
   if (purrr::is_null(show.geneset)) {
@@ -1101,7 +1180,6 @@ irGSEA.densityheatmap <- function(object = NULL, method = NULL,
                                            assay = method,
                                            slot = "scale.data",
                                            group.by = group.by,
-                                           cols = color.cluster,
                                            features = custom.geneset,
                                            pt.size = 0,
                                            fill.by = "ident")

@@ -11,6 +11,7 @@ irGSEA.ridgeplot(
   show.geneset = NULL,
   group.by = NULL,
   color.cluster = NULL,
+  cluster.levels = NULL,
   ...
 )
 }
@@ -28,6 +29,8 @@ column of metadata.}
 
 \item{color.cluster}{A vector. Default "ggsci::pal_igv()(the number of colnames
 of enrichment score matrix)" when it is set to NULL.}
+
+\item{cluster.levels}{A vector equal to the number of clusters.}
 
 \item{...}{More parameters pass to \code{\link[ggridges]{geom_density_ridges}}}
 }

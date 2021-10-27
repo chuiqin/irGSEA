@@ -13,6 +13,11 @@ irGSEA.upset(
   text.size = 9,
   cluster.color = NULL,
   bar.color = "black",
+  cluster.levels = NULL,
+  mode = "distinct",
+  set.size = 1,
+  set.degree = NULL,
+  table.generate = F,
   ...
 )
 }
@@ -35,10 +40,27 @@ of enrichment score matrix)" when it is set to NULL.}
 
 \item{bar.color}{A character. Default "black" when it is set to NULL.}
 
+\item{cluster.levels}{A vector equal to the number of clusters.}
+
+\item{mode}{A character. It should be one of the followling : distinct,
+intersect, or union. Default distinct. It represents the mode for forming
+the combination set. see Mode section \url{https://jokergoo.github.io/ComplexHeatmap-reference/book/upset-plot.html}
+for details.}
+
+\item{set.size}{The minimal combination set size. Default 1.}
+
+\item{set.degree}{A vector. Show all combination sets when it set to NULL.
+It would show different combination set when it is set to different number.
+For example, it only show the interactions among two cluster or three cluster
+when it's set to 2 or 3.}
+
+\item{table.generate}{Deault FALSE. It will output a list including all
+combination sets and their gene sets when it set to TRUE.}
+
 \item{...}{More parameters pass to \code{\link[ComplexHeatmap]{UpSet}}}
 }
 \value{
-upset plot
+upset plot or list
 }
 \description{
 Easy to show analysis results by upset plot

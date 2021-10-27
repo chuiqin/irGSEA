@@ -249,7 +249,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       singscore.scores.list <- list()
       for (k in seq_along(my.matrix.list)) {
         # calculate the rank matrix
-        singscore.rank <- rankGenes(as.data.frame(my.matrix[, my.matrix.list[[k]]]))
+        singscore.rank <- singscore::rankGenes(as.data.frame(my.matrix[, my.matrix.list[[k]]]))
         # calculate separately
         singscore.scores <- list()
 

@@ -12,7 +12,8 @@ irGSEA.bubble(
   cluster.color = NULL,
   direction.color = NULL,
   significance.color = NULL,
-  cluster_rows = T
+  cluster_rows = T,
+  cluster.levels = NULL
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ is set to NULL.}
 it is set to NULL.}
 
 \item{cluster_rows}{Whether to make cluster on rows. Defaul True.}
+
+\item{cluster.levels}{A vector equal to the number of clusters.}
 }
 \value{
 bubble plot

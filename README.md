@@ -116,12 +116,36 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
 #> Ensuring feature names don't have underscores or pipes
 #> Object representation is consistent with the most current Seurat version
 #> Calculate AUCell scores
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
+
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
 #> Finish calculate AUCell scores
 #> Calculate UCell scores
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
+
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
 #> Finish calculate UCell scores
 #> Calculate singscore scores
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
+
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
 #> Finish calculate singscore scores
 #> Calculate ssgsea scores
+#> Warning in .local(expr, gset.idx.list, ...): Using 'dgCMatrix' objects as input
+#> is still in an experimental stage.
+#> Warning in .filterFeatures(expr, method): 1 genes with constant expression
+#> values throuhgout the samples.
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
+
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
 #> Finish calculate ssgsea scores
 Seurat::Assays(pbmc3k.final)
 #> [1] "RNA"       "AUCell"    "UCell"     "singscore" "ssgsea"
@@ -194,6 +218,8 @@ only the first element will be used. It’s ok.
 ``` r
 irGSEA.upset.plot <- irGSEA.upset(object = result.dge, 
                                   method = "RRA")
+#> Warning in if (as.character(ta_call[[1]]) == "upset_top_annotation") {: the
+#> condition has length > 1 and only the first element will be used
 irGSEA.upset.plot
 ```
 

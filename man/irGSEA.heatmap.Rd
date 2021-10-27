@@ -16,6 +16,7 @@ irGSEA.heatmap(
   rowname.fointsize = 7,
   heatmap.width = 17,
   heatmap.heigh = 13,
+  cluster.levels = NULL,
   ...
 )
 }
@@ -47,6 +48,8 @@ components), default 17.}
 
 \item{heatmap.heigh}{Height of the whole heatmap (including heatmap
 components), default 13.}
+
+\item{cluster.levels}{A vector equal to the number of clusters.}
 
 \item{...}{More parameters pass to \code{\link[ComplexHeatmap]{Heatmap}}}
 }

@@ -9,7 +9,8 @@ irGSEA.barplot(
   method = NULL,
   significance.color = NULL,
   color.cluster = NULL,
-  color.method = NULL
+  color.method = NULL,
+  cluster.levels = NULL
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ of enrichment score matrix)" when it is set to NULL.}
 
 \item{color.method}{A vector. Default "ggsci::pal_igv()(the number of methods
 )" when it is set to NULL.}
+
+\item{cluster.levels}{A vector equal to the number of clusters.}
 }
 \value{
 stacked bar plot
