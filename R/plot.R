@@ -74,8 +74,8 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
   if (method %in% c("AUCell", "UCell", "singscore", "ssgsea")) {
     object[1:4] <- object[1:4] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
   }
-  # matrix
 
+  # matrix
   sig.genesets.bubble <- object[[method]] %>%
     dplyr::mutate(cell = stringr::str_c(cluster, direction, sep = "_")) %>%
     dplyr::select(c("Name", "pvalue", "cell")) %>%
@@ -116,11 +116,13 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
 
   # set levels of cluster
   if (! purrr::is_null(cluster.levels)) {
-    cell.levels <- unlist(lapply(cluster.levels, function(x){paste(x, c("up","down"), sep = "_")}))
     sig.genesets.bubble <- sig.genesets.bubble %>%
       dplyr::mutate(cluster = factor(cluster, levels = cluster.levels)) %>%
-      dplyr::mutate(cell = factor(cell, levels = cell.levels))
+      dplyr::arrange(cluster) %>%
+      dplyr::mutate(cell = factor(cell, levels = unique(cell)))
   }
+
+
 
   # set color
   if (purrr::is_null(cluster.color)) {
@@ -296,9 +298,13 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
                                               TRUE ~ NA_character_)) %>%
     tidyr::spread(cell, pvalue, fill = " ") %>%
     tibble::column_to_rownames(var = "Name")
-
+  # set levels
   if (! purrr::is_null(cluster.levels)) {
-    heatmap.levels <- unlist(lapply(cluster.levels, function(x){paste(x, c("up","down"), sep = "_")}))
+    cluster.direction <- NULL
+    heatmap.levels <- data.frame(cluster.direction = colnames(sig.genesets.heatmap)) %>%
+      dplyr::mutate(cluster = stringr::str_remove(cluster.direction, pattern = "_up|_down")) %>%
+      dplyr::arrange(factor(cluster, levels = cluster.levels)) %>%
+      dplyr::pull(cluster.direction)
     sig.genesets.heatmap <- sig.genesets.heatmap %>% dplyr::select(heatmap.levels)
     sig.genesets.heatmap.text <- sig.genesets.heatmap.text %>% dplyr::select(heatmap.levels)
   }
@@ -350,10 +356,18 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
     dplyr::mutate(value = dplyr::if_else(value=="no significant", 0, 1)) %>%
     tidyr::spread(cell, value) %>%
     tibble::column_to_rownames(var = "Name")
+
+  # set levels
   if (! purrr::is_null(cluster.levels)) {
-    heatmap.levels <- unlist(lapply(cluster.levels, function(x){paste(x, c("up","down"), sep = "_")}))
+    cluster.direction <- NULL
+    heatmap.levels <- data.frame(cluster.direction = colnames(sig.genesets.heatmap)) %>%
+      dplyr::mutate(cluster = stringr::str_remove(cluster.direction, pattern = "_up|_down")) %>%
+      dplyr::arrange(factor(cluster, levels = cluster.levels)) %>%
+      dplyr::pull(cluster.direction)
     sig.genesets.heatmap <- sig.genesets.heatmap %>% dplyr::select(heatmap.levels)
+    sig.genesets.heatmap.text <- sig.genesets.heatmap.text %>% dplyr::select(heatmap.levels)
   }
+
   sig.genesets.heatmap <- as.matrix(sig.genesets.heatmap)
 
   heatmap.body <- ComplexHeatmap::Heatmap(sig.genesets.heatmap,
@@ -679,10 +693,10 @@ irGSEA.barplot <- function(object = NULL, method = NULL,
 
   # set levels of cluster
   if (! purrr::is_null(cluster.levels)) {
-    cell.levels <- unlist(lapply(cluster.levels, function(x){paste(x, method, sep = "_")}))
     sig.genesets.barplot <- sig.genesets.barplot %>%
       dplyr::mutate(cluster = factor(cluster, levels = cluster.levels)) %>%
-      dplyr::mutate(cell = factor(cell, levels = cell.levels))
+      dplyr::arrange(cluster) %>%
+      dplyr::mutate(cell = factor(cell, levels = unique(cell)))
   }
 
   # set color
