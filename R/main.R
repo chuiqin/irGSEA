@@ -101,7 +101,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     my.matrix <- SeuratObject::GetAssayData(object, assay = "RNA", slot = "counts")}
 
   #### prepare geneset
-  if(msigdb == T){
+  if(msigdb == T & custom == F){
     h.human <- msigdbr::msigdbr(species = species, category = category, subcategory = subcategory)
     colnames(h.human) <- stringr::str_replace(colnames(h.human), "gene_symbol","symbol")
     colnames(h.human) <- stringr::str_replace(colnames(h.human), "entrez_gene", "entrez")
@@ -123,6 +123,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     }, h.sets, names(h.sets)))
 
     # filiter the gene set based on object
+    Seurat::DefaultAssay(object) <- assay
     h.gsets <- AUCell::subsetGeneSets(h.gsets, rownames(object))
     h.gsets.list <- GSEABase::geneIds(h.gsets)
 
@@ -259,20 +260,20 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
             h.gsets.list.negative <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)-")[,2] %>% purrr::discard(is.na)
             if (length(h.gsets.list.positive)==0) {
               singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-                                                              upSet = h.gsets.list.negative)
+                                                              upSet = h.gsets.list.negative, centerScore = F)
             }
             if (length(h.gsets.list.negative)==0) {
               singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-                                                              upSet = h.gsets.list.positive)
+                                                              upSet = h.gsets.list.positive, centerScore = F)
             }
             if ((length(h.gsets.list.positive)!=0)&(length(h.gsets.list.negative)!=0)) {
               singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
                                                               upSet = h.gsets.list.positive,
-                                                              downSet = h.gsets.list.negative)
+                                                              downSet = h.gsets.list.negative, centerScore = F)
             }
 
           }else{
-            singscore.scores[[i]] <- singscore::simpleScore(singscore.rank, upSet = h.gsets.list[[i]])
+            singscore.scores[[i]] <- singscore::simpleScore(singscore.rank, upSet = h.gsets.list[[i]], centerScore = F)
           }
           TotalScore <- NULL
           singscore.scores[[i]] <- singscore.scores[[i]] %>%
@@ -299,20 +300,20 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
           h.gsets.list.negative <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)-")[,2] %>% purrr::discard(is.na)
           if (length(h.gsets.list.positive)==0) {
             singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-                                                            upSet = h.gsets.list.negative)
+                                                            upSet = h.gsets.list.negative, centerScore = F)
           }
           if (length(h.gsets.list.negative)==0) {
             singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-                                                            upSet = h.gsets.list.positive)
+                                                            upSet = h.gsets.list.positive, centerScore = F)
           }
           if ((length(h.gsets.list.positive)!=0)&(length(h.gsets.list.negative)!=0)) {
             singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
                                                             upSet = h.gsets.list.positive,
-                                                            downSet = h.gsets.list.negative)
+                                                            downSet = h.gsets.list.negative, centerScore = F)
           }
 
         }else{
-          singscore.scores[[i]] <- singscore::simpleScore(singscore.rank, upSet = h.gsets.list[[i]])
+          singscore.scores[[i]] <- singscore::simpleScore(singscore.rank, upSet = h.gsets.list[[i]], centerScore = F)
         }
         TotalScore <- NULL
         singscore.scores[[i]] <- singscore.scores[[i]] %>%

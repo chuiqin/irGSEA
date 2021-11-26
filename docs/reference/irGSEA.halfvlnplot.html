@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">irGSEA</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -122,7 +122,8 @@
   method <span class='op'>=</span> <span class='cn'>NULL</span>,
   show.geneset <span class='op'>=</span> <span class='cn'>NULL</span>,
   group.by <span class='op'>=</span> <span class='cn'>NULL</span>,
-  color.cluster <span class='op'>=</span> <span class='cn'>NULL</span>
+  color.cluster <span class='op'>=</span> <span class='cn'>NULL</span>,
+  cluster.levels <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -151,6 +152,10 @@ column of metadata.</p></td>
       <th>color.cluster</th>
       <td><p>A vector. Default "ggsci::pal_igv()(the number of colnames
 of enrichment score matrix)" when it is set to NULL.</p></td>
+    </tr>
+    <tr>
+      <th>cluster.levels</th>
+      <td><p>A vector equal to the number of clusters.</p></td>
     </tr>
     </table>
 

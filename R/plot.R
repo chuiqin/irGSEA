@@ -852,6 +852,8 @@ irGSEA.density.scatterplot <- function(object = NULL, method = NULL,
                                                 features = custom.geneset,
                                                 slot = "scale.data",
                                                 reduction = reduction,
+                                                method = "wkde",
+                                                joint = T,
                                                 ...) +
     ggplot2::theme(plot.title = ggplot2::element_text(size = 10, hjust = 0.5),
                    axis.title = ggplot2::element_text(size = 10))

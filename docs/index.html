@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">irGSEA</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -73,10 +73,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 <p>Integrate all single cell rank-based gene set enrichment analysis and easy to visualize the results.</p>
-<p>For more details, please view <a href="https://chuiqin.github.io/irGSEA/">irGSEA</a></p>
-<div id="installation" class="section level2">
-<h2 class="hasAnchor">
-<a href="#installation" class="anchor"></a>Installation</h2>
+<p>For more details, please view <a href="https://chuiqin.github.io/irGSEA/">irGSEA</a> And you can view <a href="https://www.jianshu.com/p/463dd6e2986f">Chinese tutorial</a> ## Installation</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># install packages from CRAN</span>
 <span class="va">cran.packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"msigdbr"</span>, <span class="st">"dplyr"</span>, <span class="st">"purrr"</span>, <span class="st">"stringr"</span>,<span class="st">"magrittr"</span>,
@@ -103,7 +100,6 @@
 <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span><span class="op">(</span><span class="st">"irGSEA"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span> 
     <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"chuiqin/irGSEA"</span><span class="op">)</span>
 <span class="op">}</span></code></pre></div>
-</div>
 <div id="load-example-dataset" class="section level2">
 <h2 class="hasAnchor">
 <a href="#load-example-dataset" class="anchor"></a>load example dataset</h2>
@@ -142,7 +138,9 @@
 <h2 class="hasAnchor">
 <a href="#calculate-enrichment-scores" class="anchor"></a>Calculate enrichment scores</h2>
 <p>calculate enrichment scores, return a Seurat object including these score matrix</p>
+<p>AUcell or ssGSEA will run for a long time if there are lots of genes or cells. Thus, It’s recommended to keep high quality genes or cells.</p>
 <p>Error (Valid ‘mctype’: ‘snow’ or ‘doMC’) occurs when ncore &gt; 1 : please ensure the version of AUCell &gt;= 1.14 or set ncore = 1.</p>
+<p>It can be ignore when warnning occurs as follow: 1. closing unused connection 3 (localhost) 2. Using ‘dgCMatrix’ objects as input is still in an experimental stage. 3. xxx genes with constant expression values throuhgout the samples. 4. Some gene sets have size one. Consider setting ‘min.sz’ &gt; 1.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">pbmc3k.final</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/irGSEA.score.html">irGSEA.score</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc3k.final</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, 
                              slot <span class="op">=</span> <span class="st">"data"</span>, seeds <span class="op">=</span> <span class="fl">123</span>, ncores <span class="op">=</span> <span class="fl">1</span>,
@@ -181,14 +179,15 @@
 <span class="co">#&gt; ('-')</span>
 <span class="co">#&gt; Finish calculate singscore scores</span>
 <span class="co">#&gt; Calculate ssgsea scores</span>
+<span class="co">#&gt; Warning in .local(expr, gset.idx.list, ...): Using 'dgCMatrix' objects as input</span>
+<span class="co">#&gt; is still in an experimental stage.</span>
 <span class="co">#&gt; Warning in .filterFeatures(expr, method): 1 genes with constant expression</span>
 <span class="co">#&gt; values throuhgout the samples.</span>
+<span class="co">#&gt; Warning: Feature names cannot have underscores ('_'), replacing with dashes</span>
+<span class="co">#&gt; ('-')</span>
 
-<span class="co">#&gt; Warning in .filterFeatures(expr, method): Feature names cannot have underscores</span>
-<span class="co">#&gt; ('_'), replacing with dashes ('-')</span>
-
-<span class="co">#&gt; Warning in .filterFeatures(expr, method): Feature names cannot have underscores</span>
-<span class="co">#&gt; ('_'), replacing with dashes ('-')</span>
+<span class="co">#&gt; Warning: Feature names cannot have underscores ('_'), replacing with dashes</span>
+<span class="co">#&gt; ('-')</span>
 <span class="co">#&gt; Finish calculate ssgsea scores</span>
 <span class="fu">Seurat</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SeuratObject/man/ObjectAccess.html">Assays</a></span><span class="op">(</span><span class="va">pbmc3k.final</span><span class="op">)</span>
 <span class="co">#&gt; [1] "RNA"       "AUCell"    "UCell"     "singscore" "ssgsea"</span></code></pre></div>
