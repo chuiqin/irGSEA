@@ -232,8 +232,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                                                  maxRank = ucell.MaxRank,
                                                  w_neg = 1,
                                                  ncores = ncores,
-                                                 force.gc = T,
-                                                 seed = seeds)
+                                                 force.gc = T)
     colnames(ucell.scores) <- stringr::str_remove(colnames(ucell.scores), pattern = "_UCell")
     object[["UCell"]] <- SeuratObject::CreateAssayObject(counts = t(ucell.scores))
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",

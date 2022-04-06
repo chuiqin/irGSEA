@@ -11,7 +11,7 @@ easy to visualize the results.
 
 For more details, please view
 [irGSEA](https://chuiqin.github.io/irGSEA/) And you can view [Chinese
-tutorial](https://www.jianshu.com/p/463dd6e2986f) \#\# Installation
+tutorial](https://www.jianshu.com/p/463dd6e2986f) \## Installation
 
 ``` r
 # install packages from CRAN
@@ -89,14 +89,14 @@ score matrix
 AUcell or ssGSEA will run for a long time if there are lots of genes or
 cells. Thus, It’s recommended to keep high quality genes or cells.
 
-Error (Valid ‘mctype’: ‘snow’ or ‘doMC’) occurs when ncore &gt; 1 :
-please ensure the version of AUCell &gt;= 1.14 or set ncore = 1.
+Error (Valid ‘mctype’: ‘snow’ or ‘doMC’) occurs when ncore \> 1 : please
+ensure the version of AUCell \>= 1.14 or set ncore = 1.
 
 It can be ignore when warnning occurs as follow: 1. closing unused
 connection 3 (localhost) 2. Using ‘dgCMatrix’ objects as input is still
 in an experimental stage. 3. xxx genes with constant expression values
 throuhgout the samples. 4. Some gene sets have size one. Consider
-setting ‘min.sz’ &gt; 1.
+setting ‘min.sz’ \> 1.
 
 ``` r
 pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA", 
@@ -153,10 +153,10 @@ Seurat::Assays(pbmc3k.final)
 ## Integrate differential gene set
 
 Wlicox test is perform to all enrichment score matrixes and gene sets
-with adjusted p value &lt; 0.05 are used to integrated through RRA.
-Among them, Gene sets with p value &lt; 0.05 are statistically
-significant and common differential in all gene sets enrichment analysis
-methods. All results are saved in a list.
+with adjusted p value \< 0.05 are used to integrated through RRA. Among
+them, Gene sets with p value \< 0.05 are statistically significant and
+common differential in all gene sets enrichment analysis methods. All
+results are saved in a list.
 
 ``` r
 result.dge <- irGSEA.integrate(object = pbmc3k.final, 
@@ -194,9 +194,9 @@ irGSEA.heatmap.plot
 
 Show co-upregulated or co-downregulated gene sets per cluster in RRA.
 
-If error (argument “caller\_env” is missing, with no default) occurs :
+If error (argument “caller_env” is missing, with no default) occurs :
 please uninstall ggtree and run
-“remotes::install\_github(”YuLab-SMU/ggtree“)”.
+“remotes::install_github(”YuLab-SMU/ggtree”)“.
 
 ``` r
 irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge, 
@@ -211,8 +211,8 @@ irGSEA.bubble.plot
 
 Show the intersections of significant gene sets among clusters in RRA
 
-Don’t worry if warning happens : the condition has length &gt; 1 and
-only the first element will be used. It’s ok.
+Don’t worry if warning happens : the condition has length \> 1 and only
+the first element will be used. It’s ok.
 
 ``` r
 irGSEA.upset.plot <- irGSEA.upset(object = result.dge, 
