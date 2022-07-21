@@ -24,6 +24,8 @@ cran.packages <- c("msigdbr", "dplyr", "purrr", "stringr","magrittr",
 if (!requireNamespace(cran.packages, quietly = TRUE)) { 
     install.packages(cran.packages, ask = F, update = F)
 }
+#> Warning: replacing previous import 'lifecycle::last_warnings' by
+#> 'rlang::last_warnings' when loading 'pillar'
 
 # install packages from Bioconductor
 bioconductor.packages <- c("GSEABase", "AUCell", "SummarizedExperiment", 
@@ -115,6 +117,8 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
 #> Ensuring feature names don't have underscores or pipes
 #> Object representation is consistent with the most current Seurat version
 #> Calculate AUCell scores
+#> Warning in .AUCell_buildRankings(exprMat = exprMat, featureType = featureType, :
+#> nCores is no longer used. It will be deprecated in the next AUCell version.
 #> Warning: Feature names cannot have underscores ('_'), replacing with dashes
 #> ('-')
 
