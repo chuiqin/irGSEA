@@ -72,7 +72,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
     stop("`method` should be one of the followling : AUCell, UCell, singscore, ssgsea, RRA.")
   }
   if (method %in% c("AUCell", "UCell", "singscore", "ssgsea")) {
-    object[1:4] <- object[1:4] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
+    object[method] <- object[method] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
   }
 
   # matrix
@@ -272,7 +272,7 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
     stop("`method` should be one of the followling : AUCell, UCell, singscore, ssgsea, RRA.")
   }
   if (method %in% c("AUCell", "UCell", "singscore", "ssgsea")) {
-    object[1:4] <- object[1:4] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
+    object[method] <- object[method] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
   }
   # matrix
   cluster <- NULL
@@ -499,7 +499,7 @@ irGSEA.upset <- function(object = NULL, method = "RRA",
   }
   pvalue <- NULL
   if (method %in% c("AUCell", "UCell", "singscore", "ssgsea")) {
-    object[1:4] <- object[1:4] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
+    object[method] <- object[method] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
   }
   # matrix
   cluster <- NULL
@@ -665,12 +665,14 @@ irGSEA.barplot <- function(object = NULL, method = NULL,
   proportion <- NULL
   anno.cluster <- NULL
   anno.method <- NULL
-  object[1:4] <- object[1:4] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
+
   if (purrr::is_null(method)){ method <- names(object) }
+  object[method] <- object[method] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
+
   # matrix
   sig.genesets.barplot <- list()
-  for (i in seq_along(names(object))) {
-    sig.genesets.barplot[[i]] <- object[[names(object)[i]]] %>%
+  for (i in seq_along(names(object[method]))) {
+    sig.genesets.barplot[[i]] <- object[method][[names(object[method])[i]]] %>%
       dplyr::mutate(cell = stringr::str_c(cluster, direction, sep = "_")) %>%
       dplyr::select(c("Name", "pvalue", "cell")) %>%
       dplyr::mutate(pvalue = dplyr::if_else(pvalue < 0.05, "significant","no significant")) %>%
@@ -678,7 +680,7 @@ irGSEA.barplot <- function(object = NULL, method = NULL,
       tidyr::gather(cell, pvalue, -Name) %>%
       dplyr::mutate(direction = stringr::str_extract(cell, pattern = "up|down"),
                     cluster = stringr::str_remove(cell, pattern = "_up|_down"),
-                    method = names(object)[i]) %>%
+                    method = names(object[method])[i]) %>%
       dplyr::mutate(geneset = dplyr::if_else(pvalue == "no significant", "no significant", direction))
   }
 
