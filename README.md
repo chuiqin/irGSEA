@@ -14,32 +14,47 @@ For more details, please view
 tutorial](https://www.jianshu.com/p/463dd6e2986f) \## Installation
 
 ``` r
+
 # install packages from CRAN
-cran.packages <- c("msigdbr", "dplyr", "purrr", "stringr","magrittr",
-                   "RobustRankAggreg", "tibble", "reshape2", "ggsci",
-                   "tidyr", "aplot", "ggfun", "ggplotify", "ggridges", 
-                   "gghalves", "Seurat", "SeuratObject", "methods", 
-                   "devtools", "BiocManager","data.table","doParallel",
-                   "doRNG")
+cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", "doParallel", 
+                   "doRNG", "dplyr", "ggfun", "gghalves", "ggplot2", "ggplotify", 
+                   "ggridges", "ggsci", "irlba", "magrittr", "Matrix", "msigdbr", 
+                   "pagoda2", "pointr", "purrr", "RcppML", "readr", "reshape2", 
+                   "reticulate", "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
+                   "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", "tidyselect", 
+                   "tidytree", "VAM")
 if (!requireNamespace(cran.packages, quietly = TRUE)) { 
     install.packages(cran.packages, ask = F, update = F)
 }
-#> Warning: replacing previous import 'lifecycle::last_warnings' by
-#> 'rlang::last_warnings' when loading 'pillar'
 
 # install packages from Bioconductor
-bioconductor.packages <- c("GSEABase", "AUCell", "SummarizedExperiment", 
-                           "singscore", "GSVA", "ComplexHeatmap", "ggtree", 
-                           "Nebulosa")
+bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap", "decoupleR", "fgsea",
+                           "ggtree", "GSEABase", "GSVA", "Nebulosa", "scde", "singscore",
+                           "SummarizedExperiment", "UCell", "viper")
 if (!requireNamespace(bioconductor.packages, quietly = TRUE)) { 
     BiocManager::install(bioconductor.packages, ask = F, update = F)
 }
 
-if (!requireNamespace("UCell", quietly = TRUE)) { 
-    devtools::install_github("carmonalab/UCell")
+# install packages from Github
+if (!requireNamespace("VISION", quietly = TRUE)) { 
+    devtools::install_github("YosefLab/VISION", force =T)
 }
+if (!requireNamespace("gficf", quietly = TRUE)) { 
+    devtools::install_github("gambalab/gficf", force =T)
+}
+#> Warning: replacing previous import 'Matrix::tail' by 'utils::tail' when loading
+#> 'gficf'
+#> Warning: replacing previous import 'Matrix::head' by 'utils::head' when loading
+#> 'gficf'
+if (!requireNamespace("SeuratDisk", quietly = TRUE)) { 
+    devtools::install_github("mojaveazure/seurat-disk", force =T)
+}
+#> Registered S3 method overwritten by 'SeuratDisk':
+#>   method            from  
+#>   as.sparse.H5Group Seurat
+
 if (!requireNamespace("irGSEA", quietly = TRUE)) { 
-    devtools::install_github("chuiqin/irGSEA")
+    devtools::install_github("chuiqin/irGSEA", force =T)
 }
 ```
 
@@ -79,7 +94,6 @@ Idents(pbmc3k.final) <- pbmc3k.final$seurat_annotations
 ## Load library
 
 ``` r
-library(UCell)
 library(irGSEA)
 ```
 
@@ -108,17 +122,15 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
                              species = "Homo sapiens", category = "H",  
                              subcategory = NULL, geneid = "symbol",
                              method = c("AUCell", "UCell", "singscore", 
-                                        "ssgsea"),
+                                        "ssgsea", "JASMINE", "viper"),
                              aucell.MaxRank = NULL, ucell.MaxRank = NULL, 
                              kcdf = 'Gaussian')
 #> Validating object structure
 #> Updating object slots
-#> Ensuring keys are in the proper strucutre
+#> Ensuring keys are in the proper structure
 #> Ensuring feature names don't have underscores or pipes
 #> Object representation is consistent with the most current Seurat version
 #> Calculate AUCell scores
-#> Warning in .AUCell_buildRankings(exprMat = exprMat, featureType = featureType, :
-#> nCores is no longer used. It will be deprecated in the next AUCell version.
 #> Warning: Feature names cannot have underscores ('_'), replacing with dashes
 #> ('-')
 
@@ -144,14 +156,30 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
 #> is still in an experimental stage.
 #> Warning in .filterFeatures(expr, method): 1 genes with constant expression
 #> values throuhgout the samples.
+#> [1] "Calculating ranks..."
+#> [1] "Calculating absolute values from ranks..."
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
+#> Finish calculate ssgsea scores
+#> Calculate JASMINE scores
 #> Warning: Feature names cannot have underscores ('_'), replacing with dashes
 #> ('-')
 
 #> Warning: Feature names cannot have underscores ('_'), replacing with dashes
 #> ('-')
-#> Finish calculate ssgsea scores
+#> Finish calculate jasmine scores
+#> Calculate viper scores
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
+
+#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
+#> ('-')
+#> Finish calculate viper scores
 Seurat::Assays(pbmc3k.final)
-#> [1] "RNA"       "AUCell"    "UCell"     "singscore" "ssgsea"
+#> [1] "RNA"       "AUCell"    "UCell"     "singscore" "ssgsea"    "JASMINE"  
+#> [7] "viper"
 ```
 
 ## Integrate differential gene set
@@ -167,11 +195,13 @@ result.dge <- irGSEA.integrate(object = pbmc3k.final,
                                group.by = "seurat_annotations",
                                metadata = NULL, col.name = NULL,
                                method = c("AUCell","UCell","singscore",
-                                          "ssgsea"))
+                                          "ssgsea", "JASMINE", "viper"))
 #> Calculate differential gene set : AUCell
 #> Calculate differential gene set : UCell
 #> Calculate differential gene set : singscore
 #> Calculate differential gene set : ssgsea
+#> Calculate differential gene set : JASMINE
+#> Calculate differential gene set : viper
 class(result.dge)
 #> [1] "list"
 ```
@@ -221,8 +251,6 @@ the first element will be used. It’s ok.
 ``` r
 irGSEA.upset.plot <- irGSEA.upset(object = result.dge, 
                                   method = "RRA")
-#> Warning in if (as.character(ta_call[[1]]) == "upset_top_annotation") {: the
-#> condition has length > 1 and only the first element will be used
 irGSEA.upset.plot
 ```
 
@@ -276,6 +304,20 @@ halfvlnplot
 
 <img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
 
+Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE”
+between AUCell, UCell, singscore, ssgsea, JASMINE and viper among
+clusters.
+
+``` r
+vlnplot <- irGSEA.vlnplot(object = pbmc3k.final,
+                          method = c("AUCell", "UCell", "singscore", "ssgsea", 
+                                     "JASMINE", "viper"),
+                          show.geneset = "HALLMARK-INFLAMMATORY-RESPONSE")
+vlnplot
+```
+
+<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+
 ### ridge plot
 
 Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE”
@@ -289,7 +331,7 @@ ridgeplot
 #> Picking joint bandwidth of 0.00533
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
 ### density heatmap
 
@@ -303,4 +345,4 @@ densityheatmap <- irGSEA.densityheatmap(object = pbmc3k.final,
 densityheatmap
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />

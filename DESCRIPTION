@@ -1,7 +1,7 @@
 Package: irGSEA
 Type: Package
 Title: The integration of single cell rank-based gene set enrichment analysis
-Version: 1.1.3
+Version: 2.1.3
 Author: Chuiqin Fan
 Author@R: person("Chuiqin", "Fan", role = c('aut', 'cre'), email = '19cqfan@stu.edu.cn')
 Maintainer: Chuiqin Fan <19cqfan@stu.edu.cn>
@@ -10,39 +10,71 @@ Description: The integration of single cell rank-based gene set enrichment analy
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
 Imports: 
-    aplot,
     AUCell,
     ComplexHeatmap,
-    data.table,
-    doParallel,
-    doRNG,
+    decoupleR,
     dplyr,
-    ggfun,
     gghalves,
-    ggplot2,
     ggplotify,
     ggridges,
     ggsci,
     ggtree,
-    GSEABase,
     GSVA,
     magrittr,
-    methods,
     msigdbr,
     Nebulosa,
-    purrr,
-    reshape2,
+    rlang (>= 0.4.11),
     RobustRankAggreg,
     Seurat,
-    SeuratObject,
     singscore,
     stringr,
-    SummarizedExperiment,
-    tibble,
-    tidyr,
-    tidyselect,
     UCell
 URL: https://github.com/chuiqin/irGSEA
 BugReports: https://github.com/chuiqin/irGSEA/issues
+Suggests: 
+    aplot,
+    BiocManager,
+    BiocParallel,
+    devtools,
+    data.table,
+    doParallel,
+    doRNG,
+    fgsea,
+    gficf,
+    ggplot2,
+    grDevices,
+    ggfun,
+    GSEABase,
+    irlba,
+    Matrix,
+    methods,
+    pagoda2,
+    pointr,
+    purrr,
+    RcppML,
+    readr,
+    reshape2,
+    reticulate,
+    roxygen2,
+    RMTstat,
+    scde,
+    SeuratDisk,
+    SeuratObject,
+    SummarizedExperiment,
+    tidytree,
+    tidyr,
+    tibble,
+    tidyselect,
+    VAM,
+    VISION,
+    viper
+    
+    
+    
+    
+    
+    
+    
+    

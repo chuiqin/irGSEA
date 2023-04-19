@@ -29,29 +29,38 @@ And you can view [Chinese tutorial](https://www.jianshu.com/p/463dd6e2986f)
 ```{r}
 
 # install packages from CRAN
-cran.packages <- c("msigdbr", "dplyr", "purrr", "stringr","magrittr",
-                   "RobustRankAggreg", "tibble", "reshape2", "ggsci",
-                   "tidyr", "aplot", "ggfun", "ggplotify", "ggridges", 
-                   "gghalves", "Seurat", "SeuratObject", "methods", 
-                   "devtools", "BiocManager","data.table","doParallel",
-                   "doRNG")
+cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", "doParallel", 
+                   "doRNG", "dplyr", "ggfun", "gghalves", "ggplot2", "ggplotify", 
+                   "ggridges", "ggsci", "irlba", "magrittr", "Matrix", "msigdbr", 
+                   "pagoda2", "pointr", "purrr", "RcppML", "readr", "reshape2", 
+                   "reticulate", "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
+                   "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", "tidyselect", 
+                   "tidytree", "VAM")
 if (!requireNamespace(cran.packages, quietly = TRUE)) { 
     install.packages(cran.packages, ask = F, update = F)
 }
 
 # install packages from Bioconductor
-bioconductor.packages <- c("GSEABase", "AUCell", "SummarizedExperiment", 
-                           "singscore", "GSVA", "ComplexHeatmap", "ggtree", 
-                           "Nebulosa")
+bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap", "decoupleR", "fgsea",
+                           "ggtree", "GSEABase", "GSVA", "Nebulosa", "scde", "singscore",
+                           "SummarizedExperiment", "UCell", "viper")
 if (!requireNamespace(bioconductor.packages, quietly = TRUE)) { 
     BiocManager::install(bioconductor.packages, ask = F, update = F)
 }
 
-if (!requireNamespace("UCell", quietly = TRUE)) { 
-    devtools::install_github("carmonalab/UCell")
+# install packages from Github
+if (!requireNamespace("VISION", quietly = TRUE)) { 
+    devtools::install_github("YosefLab/VISION", force =T)
 }
+if (!requireNamespace("gficf", quietly = TRUE)) { 
+    devtools::install_github("gambalab/gficf", force =T)
+}
+if (!requireNamespace("SeuratDisk", quietly = TRUE)) { 
+    devtools::install_github("mojaveazure/seurat-disk", force =T)
+}
+
 if (!requireNamespace("irGSEA", quietly = TRUE)) { 
-    devtools::install_github("chuiqin/irGSEA")
+    devtools::install_github("chuiqin/irGSEA", force =T)
 }
 
 
@@ -89,7 +98,6 @@ Idents(pbmc3k.final) <- pbmc3k.final$seurat_annotations
 
 ## Load library
 ```{r message=FALSE, warning=FALSE}
-library(UCell)
 library(irGSEA)
 ```
 
@@ -119,7 +127,7 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
                              species = "Homo sapiens", category = "H",  
                              subcategory = NULL, geneid = "symbol",
                              method = c("AUCell", "UCell", "singscore", 
-                                        "ssgsea"),
+                                        "ssgsea", "JASMINE", "viper"),
                              aucell.MaxRank = NULL, ucell.MaxRank = NULL, 
                              kcdf = 'Gaussian')
 Seurat::Assays(pbmc3k.final)
@@ -139,7 +147,7 @@ result.dge <- irGSEA.integrate(object = pbmc3k.final,
                                group.by = "seurat_annotations",
                                metadata = NULL, col.name = NULL,
                                method = c("AUCell","UCell","singscore",
-                                          "ssgsea"))
+                                          "ssgsea", "JASMINE", "viper"))
 class(result.dge)
 ```
 
@@ -228,6 +236,18 @@ halfvlnplot <- irGSEA.halfvlnplot(object = pbmc3k.final,
                                   show.geneset = "HALLMARK-INFLAMMATORY-RESPONSE")
 halfvlnplot
 ```
+
+Show the expression and distribution of "HALLMARK-INFLAMMATORY-RESPONSE"
+between AUCell, UCell, singscore, ssgsea, JASMINE and viper among clusters.
+
+```{r}
+vlnplot <- irGSEA.vlnplot(object = pbmc3k.final,
+                          method = c("AUCell", "UCell", "singscore", "ssgsea", 
+                                     "JASMINE", "viper"),
+                          show.geneset = "HALLMARK-INFLAMMATORY-RESPONSE")
+vlnplot
+```
+
 
 ### ridge plot
 
