@@ -1011,7 +1011,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
       viper.scores.list <- list()
       for (k in seq_along(my.matrix.list)) {
-        viper.scores.list[[k]] <- decoupleR::run_viper(mat = as.matrix(my.matrix),
+        viper.scores.list[[k]] <- decoupleR::run_viper(mat = my.matrix[, my.matrix.list[[k]]],
                                                        net = net,
                                                        .source='source',
                                                        .target='target',
