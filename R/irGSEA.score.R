@@ -1007,26 +1007,33 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
     if ("viper" %in% method) {
       message("Calculate viper scores")
-      # Run viper
-      acts <- decoupleR::run_viper(mat = as.matrix(my.matrix),
-                                   net = net,
-                                   .source='source',
-                                   .target='target',
-                                   .mor='weight',
-                                   minsize = minGSSize,
-                                   cores = ncores)
-      source <- NULL
-      condition <- NULL
-      score <- NULL
-      acts <- acts %>%
-        dplyr::select(c("source", "condition", "score")) %>%
-        tidyr::pivot_wider(names_from = source, values_from = score) %>%
-        tibble::column_to_rownames(var = "condition")
 
-      object[["viper"]] <- SeuratObject::CreateAssayObject(counts = t(acts))
+
+      viper.scores.list <- list()
+      for (k in seq_along(my.matrix.list)) {
+        viper.scores.list[[k]] <- decoupleR::run_viper(mat = as.matrix(my.matrix),
+                                                       net = net,
+                                                       .source='source',
+                                                       .target='target',
+                                                       .mor='weight',
+                                                       minsize = minGSSize,
+                                                       cores = ncores)
+        source <- NULL
+        condition <- NULL
+        score <- NULL
+        viper.scores.list[[k]] <- viper.scores.list[[k]] %>%
+          dplyr::select(c("source", "condition", "score")) %>%
+          tidyr::pivot_wider(names_from = source, values_from = score) %>%
+          tibble::column_to_rownames(var = "condition")
+        viper.scores.list[[k]] <- t(viper.scores.list[[k]])
+
+      }
+      acts <- do.call(cbind, viper.scores.list)
+      object[["viper"]] <- SeuratObject::CreateAssayObject(counts = acts)
       object <- SeuratObject::SetAssayData(object, slot = "scale.data",
-                                           new.data = t(acts),
+                                           new.data = acts,
                                            assay = "viper")
+      rm(viper.scores.list)
       message("Finish calculate viper scores")
 
     }

@@ -26,7 +26,7 @@ For more details, please view [irGSEA](https://chuiqin.github.io/irGSEA/)
 And you can view [Chinese tutorial](https://www.jianshu.com/p/463dd6e2986f)
 ## Installation
 
-```{r}
+```{r, eval = FALSE}
 
 # install packages from CRAN
 cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", "doParallel", 
@@ -202,7 +202,7 @@ methods
 ```{r fig.height=10, fig.width=10}
 irGSEA.barplot.plot <- irGSEA.barplot(object = result.dge,
                                       method = c("AUCell", "UCell", "singscore",
-                                                 "ssgsea"))
+                                                 "ssgsea", "JASMINE", "viper", "RRA"))
 irGSEA.barplot.plot
 
 ```

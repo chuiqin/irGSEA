@@ -42,16 +42,9 @@ if (!requireNamespace("VISION", quietly = TRUE)) {
 if (!requireNamespace("gficf", quietly = TRUE)) { 
     devtools::install_github("gambalab/gficf", force =T)
 }
-#> Warning: replacing previous import 'Matrix::tail' by 'utils::tail' when loading
-#> 'gficf'
-#> Warning: replacing previous import 'Matrix::head' by 'utils::head' when loading
-#> 'gficf'
 if (!requireNamespace("SeuratDisk", quietly = TRUE)) { 
     devtools::install_github("mojaveazure/seurat-disk", force =T)
 }
-#> Registered S3 method overwritten by 'SeuratDisk':
-#>   method            from  
-#>   as.sparse.H5Group Seurat
 
 if (!requireNamespace("irGSEA", quietly = TRUE)) { 
     devtools::install_github("chuiqin/irGSEA", force =T)
@@ -264,7 +257,7 @@ methods
 ``` r
 irGSEA.barplot.plot <- irGSEA.barplot(object = result.dge,
                                       method = c("AUCell", "UCell", "singscore",
-                                                 "ssgsea"))
+                                                 "ssgsea", "JASMINE", "viper", "RRA"))
 irGSEA.barplot.plot
 ```
 

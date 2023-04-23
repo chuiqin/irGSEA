@@ -65,7 +65,13 @@ irGSEA.barplot <- function(object = NULL, method = NULL,
   anno.method <- NULL
 
   if (purrr::is_null(method)){ method <- names(object) }
-  object[method] <- object[method] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
+
+  for (i in method) {
+    if (i != "RRA"){
+      object[i] <- object[i] %>% purrr::map( ~.x %>% dplyr::rename(pvalue = p_val_adj))
+    }
+  }
+
 
   # matrix
   sig.genesets.barplot <- list()
