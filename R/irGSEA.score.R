@@ -328,6 +328,10 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     }
 
     h.gsets.list <- geneset %>% purrr::compact()
+
+    # remove duplication
+    h.gsets.list <- lapply(h.gsets.list, function(x){unique(unlist(x))})
+
     # Filter gene sets by minGSSize and maxGSSize
     h.gsets.list2 <- sapply(h.gsets.list, function(x){
       length(x) >= minGSSize & length(x) <= maxGSSize
@@ -1011,13 +1015,34 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
       viper.scores.list <- list()
       for (k in seq_along(my.matrix.list)) {
-        viper.scores.list[[k]] <- decoupleR::run_viper(mat = as.matrix(my.matrix[, my.matrix.list[[k]]]),
-                                                       net = net,
-                                                       .source='source',
-                                                       .target='target',
-                                                       .mor='weight',
-                                                       minsize = minGSSize,
-                                                       cores = ncores)
+
+        if (length(unique(net$source)) == 1) {
+          net.copy <- rbind(net, net)
+          net.star <- (0.5 * nrow(net.copy))+1
+          net.end <- nrow(net.copy)
+          net.copy$source[net.star:net.end] <- paste0(net$source[1:nrow(net)], "_copy")
+          viper.scores.list[[k]] <- decoupleR::run_viper(mat = as.matrix(my.matrix[, my.matrix.list[[k]]]),
+                                                         net = net.copy,
+                                                         .source='source',
+                                                         .target='target',
+                                                         .mor='weight',
+                                                         minsize = minGSSize,
+                                                         cores = ncores)
+          source <- NULL
+          viper.scores.list[[k]] <- viper.scores.list[[k]] %>%
+            dplyr::filter(source != unique(paste0(net$source[1:nrow(net)], "_copy")))
+
+        }else{
+          viper.scores.list[[k]] <- decoupleR::run_viper(mat = as.matrix(my.matrix[, my.matrix.list[[k]]]),
+                                                         net = net,
+                                                         .source='source',
+                                                         .target='target',
+                                                         .mor='weight',
+                                                         minsize = minGSSize,
+                                                         cores = ncores)
+        }
+
+
         source <- NULL
         condition <- NULL
         score <- NULL
