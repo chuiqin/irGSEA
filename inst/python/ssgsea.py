@@ -1,9 +1,10 @@
 # import
 import scanpy as sc
 import pandas as pd
+import numpy as np
 import gseapy as gp
 import argparse
-
+from scipy.sparse import csr_matrix
 
 # Parse the parameters passed in
 parser = argparse.ArgumentParser(description=' ')
@@ -22,7 +23,16 @@ threads = args.threads
 
 # def function
 adata = sc.read_h5ad("./temp.h5ad")
-data = pd.DataFrame.sparse.from_spmatrix(adata.X)
+
+if isinstance(adata.X, csr_matrix):
+    data = pd.DataFrame.sparse.from_spmatrix(adata.X)
+elif isinstance(adata.X, np.ndarray):
+    data = pd.DataFrame(adata.X)
+else:
+    raise ValueError("Unsupported data type for adata.X")
+
+
+
 data.index=adata.obs.index
 data.columns=adata.var.index
 data = data.T

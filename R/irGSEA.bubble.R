@@ -163,7 +163,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
   labels.direction <- sig.genesets.bubble %>%
     ggplot2::ggplot(ggplot2::aes(cell, y = anno.direction, fill = direction)) +
     ggplot2::geom_tile() +
-    ggplot2::scale_fill_manual(values = direction.color, name = method) +
+    ggplot2::scale_fill_manual(values = direction.color, name = "Direction") +
     ggplot2::scale_y_discrete(position = "right") +
     ggplot2::theme_minimal() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank(),

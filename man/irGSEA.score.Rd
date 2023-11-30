@@ -26,17 +26,22 @@ irGSEA.score(
   aucell.MaxRank = NULL,
   ucell.MaxRank = NULL,
   kcdf = "Gaussian",
-  JASMINE.method = "oddsratio"
+  JASMINE.method = "oddsratio",
+  VISION.latentSpace = NULL,
+  VISION.dimRed = NULL,
+  VISION.dimRedComponents = NULL
 )
 }
 \arguments{
-\item{object}{Seurat object or scRNA-seq matrix}
+\item{object}{Seurat object (V4 or V5), Assay object (V4 or V5),
+scRNA-seq sparse matrix/matrix/data.frame (Genes X Cells).}
 
 \item{assay}{Name of assay to use, defaults to the active assay. The parameter
-works when a seurat object is input.}
+works when a seurat object is input. If input assay object, the assay object
+will regarded as RNA assay and included in output Seurat object.}
 
 \item{slot}{Default data. The parameter works if a seurat object is input.
-VISION or AddModuleScore should be data, and VAM or pagoda2 should be counts.}
+AddModuleScore, VAM should be data, and VISION, gficf, pagoda2 should be counts.}
 
 \item{min.cells}{The minimum detected cells per gene, default 3. The parameter
 worsk if a scRNA-seq matrix is input.}
@@ -58,7 +63,7 @@ adding a + or - sign in special gene set.}
 be equal to geneset. Each element in the list represent a gene set. The element
 is a vector. And the name of vector are gene names. And you can also specify
 the weight of each gene by a specific number. The parameter works if parameter
-"geneset" is not null and "wsum", "wmean", "mdt", "viper" are selected in "method".}
+"geneset" is not null and "wsum", "wmean", "mdt", "viper", "Sargent" are selected in "method".}
 
 \item{msigdb}{Default True. You can acquire the collection gene sets from
 msigdb database. It will be ignored when custom is set to true.}
@@ -157,7 +162,7 @@ parameter works if msigdb is True.}
               gene interaction confidence.
 
               `GSVApy (https://doi.org/10.1038/ng.3593)`:
-              The python version of GSVA is wrapped by the decoupleR package.
+              The python version of GSVA is wrapped by the decoupler-py package.
 
               `gficf (https://doi.org/10.1093/nargab/lqad024)`:
               gficf takes advantage of the informative biological signals spreading
@@ -188,6 +193,9 @@ parameter works if msigdb is True.}
               coefficient of right-singular vector in SVD of this matrix is
               extracted as enrichment scores.
 
+              `ssGSEApy (https://doi.org/10.1093/bioinformatics/btac757)`:
+              The python version of ssGSEA is wrapped by the python package GSEApy.
+
               `AddModuleScore (https://doi.org/10.1126/science.aad0501)`:
               Calculate the average expression levels of each program (cluster)
               on single cell level, subtracted by the aggregated expression of
@@ -199,7 +207,15 @@ parameter works if msigdb is True.}
               pagoda2 fits an error model for each cell to depict its properties,
               and residual variance of each gene in the cell is re-normalized
               subsequently. Then, the enrichment scores of each gene set is
-              quantified by its first weighted principal component.}
+              quantified by its first weighted principal component.
+
+              `Sargent (https://doi.org/10.1016/j.mex.2023.102196)`:
+              Sargent sorts non-zero expressed genes from high to low expression for
+              a given cell, and transforms an input gene-by-cell expression matrix
+              into a corresponding gene-set-by-cell assignment score matrix. Then,
+              Sargent calculates a gini-index among assignment scores per cell,
+              transforming the gene-set-by-cell assignment score matrix to a
+              distribution of indexes.}
 
 \item{aucell.MaxRank}{The threshold to calculate the AUC. Default only the top 5%
 of the expressed genes are used to checks whether the gene set are within
@@ -216,9 +232,27 @@ logarithmic scale. Other option is "Poisson" if input expression values are
 integer counts. The parameter works if "ssgsea" is selected in "method".}
 
 \item{JASMINE.method}{Default oddsratio. You can choose oddsratio or likelihood.}
+
+\item{VISION.latentSpace}{latent space for expression data. Numeric matrix
+or dataframe with dimensions CELLS x COMPONENTS. Latent space will be used to
+create the neighbors graph. if a latent space has been computed elsewhere
+(either via PCA, or other factor analysis methods such as Harmony, ZIFA,
+ZINB-WaVE or scVI) it can be provided via the latentSpace argument as
+a data frame. When the input to VISION.latentSpace is present, the inputs to
+VISION.dimRed and VISION.dimRedComponents are ignored.}
+
+\item{VISION.dimRed}{Dimensionality reduction of Seurat object to use for
+the latentSpace. Default is to look for "pca" and use that if it exists. Of
+course, you can also enter "harmony", if you want to execute VISION in
+the harmony dimension.}
+
+\item{VISION.dimRedComponents}{number of components to use for the selected
+dimensionality reduction. Default is to use all components.}
 }
 \value{
-a Seurat object including score matrix.
+Seurat object including score matrix. If input Seurat object (V4) or
+Assay object (V4), return Seurat object (V4) including score matrix. If input
+Seurat object (V5) or  Assay object (V5), return Seurat object (V5) including score matrix.
 }
 \description{
 Input a Seurat object or scRNA-seq matrix, calculate the enrichment scores of
@@ -232,16 +266,42 @@ library(Seurat)
 library(SeuratData)
 # download 3k PBMCs from 10X Genomics
 InstallData("pbmc3k")
+library(Seurat)
+
+# Seurat object (V4)
+library(RcppML)
+library(irGSEA)
 data("pbmc3k.final")
 pbmc3k.final <- SeuratObject::UpdateSeuratObject(pbmc3k.final)
-
-# Seurat object
 pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA", slot = "data",
 msigdb = T, species = "Homo sapiens", category = "H", geneid = "symbol",
 method = c("AUCell", "UCell", "singscore", "ssgsea"), kcdf = 'Gaussian')
 
-# data.fram, matrix, or dgmatrix
-pbmc3k.final2 <- irGSEA.score(object = pbmc3k.final@assays$RNA@counts,
+
+# Seurat object (V5)
+data("pbmc3k.final")
+pbmc3k.final <- SeuratObject::UpdateSeuratObject(pbmc3k.final)
+pbmc3k.final2 <- CreateSeuratObject(counts = CreateAssay5Object(
+GetAssayData(pbmc3k.final, assay = "RNA", slot = "counts")),
+meta.data = pbmc3k.final[[]])
+pbmc3k.final2 <- NormalizeData(pbmc3k.final2)
+pbmc3k.final2 <- irGSEA.score(object = pbmc3k.final2, assay = "RNA", slot = "data",
+msigdb = T, species = "Homo sapiens", category = "H", geneid = "symbol",
+method = c("AUCell", "UCell", "singscore", "ssgsea"), kcdf = 'Gaussian')
+
+# Assay object (V5)
+data("pbmc3k.final")
+pbmc3k.final <- SeuratObject::UpdateSeuratObject(pbmc3k.final)
+pbmc3k.final3 <- CreateAssay5Object(counts = GetAssayData(pbmc3k.final,
+assay = "RNA", slot = "counts"))
+pbmc3k.final3 <- NormalizeData(pbmc3k.final3)
+pbmc3k.final3 <- irGSEA.score(object = pbmc3k.final3, assay = "RNA", slot = "data",
+msigdb = T, species = "Homo sapiens", category = "H", geneid = "symbol",
+method = c("AUCell", "UCell", "singscore", "ssgsea"), kcdf = 'Gaussian')
+
+# Data.fram, Matrix, or dgmatrix
+pbmc3k.final2 <- irGSEA.score(object = GetAssayData(pbmc3k.final,
+assay = "RNA", slot = "counts"),
 assay = "RNA", slot = "data", min.cells = 3, min.feature = 0,
 method = c("AUCell", "UCell", "singscore", "ssgsea"), kcdf = 'Poisson')
 

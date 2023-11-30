@@ -239,7 +239,7 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
                                  labels_gp = grid::gpar(fill = direction.color))
 
   # merge all legend
-  heatmap.legend <- ComplexHeatmap::packLegend(lgd1, lgd2, lgd3, lgd4,
+  heatmap.legend <- ComplexHeatmap::packLegend(lgd3, lgd4, lgd1, lgd2,
                                                direction = "vertical",
                                                column_gap = grid::unit(1, "cm"))
 

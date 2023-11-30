@@ -16,40 +16,201 @@ tutorial](https://www.jianshu.com/p/463dd6e2986f) \## Installation
 ``` r
 
 # install packages from CRAN
-cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", "doParallel", 
-                   "doRNG", "dplyr", "ggfun", "gghalves", "ggplot2", "ggplotify", 
-                   "ggridges", "ggsci", "irlba", "magrittr", "Matrix", "msigdbr", 
-                   "pagoda2", "pointr", "purrr", "RcppML", "readr", "reshape2", 
-                   "reticulate", "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
-                   "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", "tidyselect", 
-                   "tidytree", "VAM")
-if (!requireNamespace(cran.packages, quietly = TRUE)) { 
-    install.packages(cran.packages, ask = F, update = F)
+cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", 
+                   "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
+                   "ggplot2", "ggplotify", "ggridges", "ggsci", "irlba",
+                   "magrittr", "Matrix", "msigdbr", "pagoda2", "pointr", 
+                   "purrr", "RcppML", "readr", "reshape2", "reticulate", 
+                   "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
+                   "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", 
+                   "tidyselect", "tidytree", "VAM")
+
+for (i in seq_along(cran.packages)) {
+  if (!requireNamespace(i, quietly = TRUE)) {
+    install.packages(i, ask = F, update = F)
+  }
 }
 
 # install packages from Bioconductor
-bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap", "decoupleR", "fgsea",
-                           "ggtree", "GSEABase", "GSVA", "Nebulosa", "scde", "singscore",
-                           "SummarizedExperiment", "UCell", "viper")
-if (!requireNamespace(bioconductor.packages, quietly = TRUE)) { 
-    BiocManager::install(bioconductor.packages, ask = F, update = F)
+bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap", 
+                           "decoupleR", "fgsea", "ggtree", "GSEABase", 
+                           "GSVA", "Nebulosa", "scde", "singscore",
+                           "SummarizedExperiment", "UCell",
+                           "viper","sparseMatrixStats")
+
+for (i in seq_along(bioconductor.packages)) {
+  if (!requireNamespace(i, quietly = TRUE)) {
+    install.packages(i, ask = F, update = F)
+  }
 }
 
 # install packages from Github
-if (!requireNamespace("VISION", quietly = TRUE)) { 
-    devtools::install_github("YosefLab/VISION", force =T)
-}
-if (!requireNamespace("gficf", quietly = TRUE)) { 
-    devtools::install_github("gambalab/gficf", force =T)
-}
-if (!requireNamespace("SeuratDisk", quietly = TRUE)) { 
-    devtools::install_github("mojaveazure/seurat-disk", force =T)
-}
-
 if (!requireNamespace("irGSEA", quietly = TRUE)) { 
     devtools::install_github("chuiqin/irGSEA", force =T)
 }
 ```
+
+Optional installation if you want to perform VISION, gficf, Sargent,
+ssGSEApy, GSVApy, etc
+
+``` r
+
+#### install packages from Github
+# VISION
+if (!requireNamespace("VISION", quietly = TRUE)) { 
+    devtools::install_github("YosefLab/VISION", force =T)
+}
+
+# mdt need ranger
+if (!requireNamespace("ranger", quietly = TRUE)) { 
+  devtools::install_github("imbs-hl/ranger", force =T)
+}
+
+# gficf need RcppML (version > 0.3.7) package
+if (!utils::packageVersion("RcppML") > "0.3.7") {
+  message("The version of RcppML should greater than 0.3.7 and install RcppML package from Github")
+  devtools::install_github("zdebruine/RcppML", force =T)
+}
+
+# please first `library(RcppML)` if you want to perform gficf
+if (!requireNamespace("gficf", quietly = TRUE)) { 
+    devtools::install_github("gambalab/gficf", force =T)
+}
+
+# GSVApy and ssGSEApy need SeuratDisk package
+if (!requireNamespace("SeuratDisk", quietly = TRUE)) { 
+    devtools::install_github("mojaveazure/seurat-disk", force =T)
+}
+
+# sargent
+if (!requireNamespace("sargent", quietly = TRUE)) { 
+    devtools::install_github("Sanofi-Public/PMCB-Sargent", force =T)
+}
+
+# pagoda2 need scde package
+if (!requireNamespace("scde", quietly = TRUE)) { 
+  devtools::install_github("hms-dbmi/scde", force =T)
+}
+
+# if error1 (functio 'sexp_as_cholmod_sparse' not provided by package 'Matrix')
+# or error2 (functio 'as_cholmod_sparse' not provided by package 'Matrix') occurs
+# when you perform pagoda2, please check the version of irlba and Matrix
+# It's ok when I test as follow：
+# R 4.2.2 irlba(v 2.3.5.1) Matrix(1.5-3)
+# R 4.3.1 irlba(v 2.3.5.1) Matrix(1.6-1.1)
+# R 4.3.2 irlba(v 2.3.5.1) Matrix(1.6-3)
+
+
+#### create conda env
+# If error (Unable to find conda binary. Is Anaconda installed) occurs, 
+# please perform `reticulate::install_miniconda()`
+if (! "irGSEA" %in% reticulate::conda_list()$name) {
+      reticulate::conda_create("irGSEA")
+}
+
+# if python package exist
+python.package <- reticulate::py_list_packages(envname = "irGSEA")$package
+require.package <- c("anndata", "scanpy", "argparse", "gseapy", "decoupler")
+for (i in seq_along(require.package)) {
+  if (i %in% python.package) {
+    reticulate::conda_install(envname = "irGSEA", packages = i, pip = T)
+  }
+}
+```
+
+Some users can accelerate by mirror
+
+``` r
+options(BioC_mirror="https://mirrors.tuna.tsinghua.edu.cn/bioconductor/")
+options("repos" = c(CRAN="http://mirrors.cloud.tencent.com/CRAN/"))
+
+# install packages from CRAN
+cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", 
+                   "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
+                   "ggplot2", "ggplotify", "ggridges", "ggsci", "irlba",
+                   "magrittr", "Matrix", "msigdbr", "pagoda2", "pointr", 
+                   "purrr", "RcppML", "readr", "reshape2", "reticulate", 
+                   "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
+                   "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", 
+                   "tidyselect", "tidytree", "VAM")
+
+for (i in seq_along(cran.packages)) {
+  if (!requireNamespace(i, quietly = TRUE)) {
+    install.packages(i, ask = F, update = F)
+  }
+}
+
+# install packages from Bioconductor
+bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap", 
+                           "decoupleR", "fgsea", "ggtree", "GSEABase", 
+                           "GSVA", "Nebulosa", "scde", "singscore",
+                           "SummarizedExperiment", "UCell", "viper")
+
+for (i in seq_along(bioconductor.packages)) {
+  if (!requireNamespace(i, quietly = TRUE)) {
+    install.packages(i, ask = F, update = F)
+  }
+}
+
+# install packages from git
+if (!requireNamespace("irGSEA", quietly = TRUE)) { 
+    devtools::install_git("https://gitee.com/fan_chuiqin/irGSEA.git", force =T)
+}
+# VISION
+if (!requireNamespace("VISION", quietly = TRUE)) { 
+    devtools::install_git("https://gitee.com/fan_chuiqin/VISION.git", force =T)
+}
+
+# mdt need ranger
+if (!requireNamespace("ranger", quietly = TRUE)) { 
+  devtools::install_git("https://gitee.com/fan_chuiqin/ranger.git", force =T)
+}
+
+# gficf need RcppML (version > 0.3.7) package
+if (!utils::packageVersion("RcppML") > "0.3.7") {
+  message("The version of RcppML should greater than 0.3.7 and install RcppML package from Git")
+  devtools::install_git("https://gitee.com/fan_chuiqin/RcppML.git", force =T)
+}
+
+# please first `library(RcppML)` if you want to perform gficf
+if (!requireNamespace("gficf", quietly = TRUE)) { 
+    devtools::install_git("https://gitee.com/fan_chuiqin/gficf.git", force =T)
+}
+
+# GSVApy and ssGSEApy need SeuratDisk package
+if (!requireNamespace("SeuratDisk", quietly = TRUE)) { 
+    devtools::install_git("https://gitee.com/fan_chuiqin/seurat-disk.git", 
+                          force =T)}
+
+# sargent
+if (!requireNamespace("sargent", quietly = TRUE)) { 
+    devtools::install_git("https://gitee.com/fan_chuiqin/PMCB-Sargent.git", 
+                          force =T)}
+
+# pagoda2 need scde package
+if (!requireNamespace("scde", quietly = TRUE)) { 
+  devtools::install_git("https://gitee.com/fan_chuiqin/scde.git", force =T)
+}
+
+#### create conda env
+# If error (Unable to find conda binary. Is Anaconda installed) occurs, 
+# please perform `reticulate::install_miniconda()`
+if (! "irGSEA" %in% reticulate::conda_list()$name) {
+      reticulate::conda_create("irGSEA")
+}
+
+# if python package exist
+python.package <- reticulate::py_list_packages(envname = "irGSEA")$package
+require.package <- c("anndata", "scanpy", "argparse", "gseapy", "decoupler")
+for (i in require.package) {
+  if (! i %in% python.package) {
+    reticulate::conda_install(envname = "irGSEA", packages = i, pip = T,
+     pip_options = "-i https://pypi.tuna.tsinghua.edu.cn/simple")
+  }
+}
+```
+
+![All methods](./man/figures/figure3.png)
 
 ## load example dataset
 
@@ -77,7 +238,7 @@ DimPlot(pbmc3k.final, reduction = "umap",
         group.by = "seurat_annotations",label = T) + NoLegend()
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
 
 ``` r
 # set cluster to idents
@@ -109,7 +270,7 @@ setting ‘min.sz’ \> 1.
 
 ``` r
 pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA", 
-                             slot = "data", seeds = 123, ncores = 1,
+                             slot = "data", seeds = 123, ncores = 4,
                              min.cells = 3, min.feature = 0,
                              custom = F, geneset = NULL, msigdb = T, 
                              species = "Homo sapiens", category = "H",  
@@ -215,7 +376,7 @@ irGSEA.heatmap.plot <- irGSEA.heatmap(object = result.dge,
 irGSEA.heatmap.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
 
 ### Bubble.plot
 
@@ -232,7 +393,7 @@ irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge,
 irGSEA.bubble.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
 
 ### upset plot
 
@@ -247,7 +408,7 @@ irGSEA.upset.plot <- irGSEA.upset(object = result.dge,
 irGSEA.upset.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
 
 ### Stacked bar plot
 
@@ -261,7 +422,7 @@ irGSEA.barplot.plot <- irGSEA.barplot(object = result.dge,
 irGSEA.barplot.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
 
 ### 2. local show
 
@@ -281,7 +442,7 @@ scatterplot <- irGSEA.density.scatterplot(object = pbmc3k.final,
 scatterplot
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
 ### half vlnplot
 
@@ -295,7 +456,7 @@ halfvlnplot <- irGSEA.halfvlnplot(object = pbmc3k.final,
 halfvlnplot
 ```
 
-<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
 
 Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE”
 between AUCell, UCell, singscore, ssgsea, JASMINE and viper among
@@ -309,7 +470,7 @@ vlnplot <- irGSEA.vlnplot(object = pbmc3k.final,
 vlnplot
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
 
 ### ridge plot
 
@@ -324,7 +485,7 @@ ridgeplot
 #> Picking joint bandwidth of 0.00533
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
 
 ### density heatmap
 
@@ -338,4 +499,276 @@ densityheatmap <- irGSEA.densityheatmap(object = pbmc3k.final,
 densityheatmap
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
+
+``` r
+#### work wit clusterProfiler package ####
+# load library
+library(clusterProfiler)
+library(tidyverse)
+
+### kegg ###
+# download kegg pathway (human) and write as gson file
+kk <- clusterProfiler::gson_KEGG(species = "hsa")
+gson::write.gson(kk, file = "./KEGG_20231128.gson")
+
+# read gson file
+kk2 <- gson::read.gson("./KEGG_20231123.gson")
+# Convert to a data frame
+kegg.list <- dplyr::left_join(kk2@gsid2name,
+                              kk2@gsid2gene,
+                              by = "gsid")
+head(kegg.list)
+# gsid               name      gene
+# 1 hsa01100 Metabolic pathways        10
+# 2 hsa01100 Metabolic pathways       100
+# 3 hsa01100 Metabolic pathways     10005
+# 4 hsa01100 Metabolic pathways     10007
+# 5 hsa01100 Metabolic pathways 100137049
+# 6 hsa01100 Metabolic pathways     10020
+
+# Convert gene ID to gene symbol
+gene_name <- clusterProfiler::bitr(kegg.list$gene, 
+                                   fromType = "ENTREZID", 
+                                   toType = "SYMBOL", 
+                                   OrgDb = "org.Hs.eg.db")
+kegg.list <- dplyr::full_join(kegg.list,
+                              gene_name,
+                              by = c("gene"="ENTREZID"))
+# remove NA value if exist
+kegg.list <- kegg.list[complete.cases(kegg.list[, c("gene", "SYMBOL")]), ]
+head(kegg.list)
+# gsid               name      gene  SYMBOL
+# 1 hsa01100 Metabolic pathways        10    NAT2
+# 2 hsa01100 Metabolic pathways       100     ADA
+# 3 hsa01100 Metabolic pathways     10005   ACOT8
+# 4 hsa01100 Metabolic pathways     10007  GNPDA1
+# 5 hsa01100 Metabolic pathways 100137049 PLA2G4B
+# 6 hsa01100 Metabolic pathways     10020     GNE
+
+# convert to list required by irGSEA package
+kegg.list$name <- factor(kegg.list$name)
+kegg.list <- kegg.list %>% 
+  dplyr::group_split(name, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(SYMBOL) %>% unique(.)) %>%
+  purrr::set_names(levels(kegg.list$name))
+head(kegg.list)
+
+### go bp ###
+# download go bp (human) and write as gson file
+go <- clusterProfiler::gson_GO(OrgDb = "org.Hs.eg.db", ont = "BP")
+gson::write.gson(go, file = "./go_20231128.gson")
+
+# read gson file
+go2 <- gson::read.gson("./go_20231128.gson")
+
+# Convert to a data frame
+go.list <- dplyr::left_join(go2@gsid2name,
+                            go2@gsid2gene,
+                            by = "gsid")
+head(go.list)
+# gsid                             name gene
+# 1 GO:0000001        mitochondrion inheritance <NA>
+#   2 GO:0000002 mitochondrial genome maintenance  142
+# 3 GO:0000002 mitochondrial genome maintenance  291
+# 4 GO:0000002 mitochondrial genome maintenance 1763
+# 5 GO:0000002 mitochondrial genome maintenance 1890
+# 6 GO:0000002 mitochondrial genome maintenance 2021
+
+# Convert gene ID to gene symbol
+go.list <- dplyr::full_join(go.list,
+                            go2@gene2name,
+                            by = c("gene"="ENTREZID"))
+# remove NA value if exist
+go.list <- go.list[complete.cases(go.list[, c("gene", "SYMBOL")]), ]
+head(go.list)
+# gsid                             name gene  SYMBOL
+# 2 GO:0000002 mitochondrial genome maintenance  142   PARP1
+# 3 GO:0000002 mitochondrial genome maintenance  291 SLC25A4
+# 4 GO:0000002 mitochondrial genome maintenance 1763    DNA2
+# 5 GO:0000002 mitochondrial genome maintenance 1890    TYMP
+# 6 GO:0000002 mitochondrial genome maintenance 2021   ENDOG
+# 7 GO:0000002 mitochondrial genome maintenance 3980    LIG3
+
+# convert to list required by irGSEA package
+go.list$name <- factor(go.list$name)
+go.list <- go.list %>% 
+  dplyr::group_split(name, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(SYMBOL) %>% unique(.)) %>%
+  purrr::set_names(levels(go.list$name))
+head(go.list)
+
+#### work with newest Msigdb ####
+
+# https://data.broadinstitute.org/gsea-msigdb/msigdb/release/
+# In this page, you can download human/mouse gmt file or db.zip file
+# The db.zip file contains metadata information for the gene set
+
+# load library
+library(clusterProfiler)
+library(tidyverse)
+library(DBI)
+library(RSQLite)
+
+
+### db.zip ###
+
+# download zip file and unzip zip file
+zip_url <- "https://data.broadinstitute.org/gsea-msigdb/msigdb/release/2023.2.Hs/msigdb_v2023.2.Hs.db.zip"
+local_zip_path <- "./msigdb_v2023.2.Hs.db.zip"
+download.file(zip_url, local_zip_path)
+unzip(local_zip_path, exdir = "./")
+
+# code modified by https://rdrr.io/github/cashoes/sear/src/data-raw/1_parse_msigdb_sqlite.r
+con <- DBI::dbConnect(RSQLite::SQLite(), dbname = './msigdb_v2023.2.Hs.db')
+DBI::dbListTables(con)
+
+# define tables we want to combine
+geneset_db <- dplyr::tbl(con, 'gene_set')                                              # standard_name, collection_name
+details_db <- dplyr::tbl(con, 'gene_set_details')                                      # description_brief, description_full
+geneset_genesymbol_db <- dplyr::tbl(con, 'gene_set_gene_symbol')                       # meat and potatoes
+genesymbol_db <- dplyr::tbl(con, 'gene_symbol')                                        # mapping from ids to gene symbols
+collection_db <- dplyr::tbl(con, 'collection') %>% dplyr::select(collection_name, full_name)  # collection metadata
+
+# join tables
+msigdb <- geneset_db %>%
+  dplyr::left_join(details_db, by = c('id' = 'gene_set_id')) %>%
+  dplyr::left_join(collection_db, by = 'collection_name') %>%
+  dplyr::left_join(geneset_genesymbol_db, by = c('id' = 'gene_set_id')) %>%
+  dplyr::left_join(genesymbol_db, by = c('gene_symbol_id' = 'id')) %>%
+  dplyr::select(collection = collection_name, subcollection = full_name, geneset = standard_name, description = description_brief, symbol) %>%
+  dplyr::as_tibble() 
+
+# clean up
+DBI::dbDisconnect(con)
+
+
+unique(msigdb$collection)
+# [1] "C1"                 "C2:CGP"             "C2:CP:BIOCARTA"    
+# [4] "C2:CP:KEGG_LEGACY"  "C2:CP:PID"          "C3:MIR:MIRDB"      
+# [7] "C3:MIR:MIR_LEGACY"  "C3:TFT:GTRD"        "C3:TFT:TFT_LEGACY" 
+# [10] "C4:3CA"             "C4:CGN"             "C4:CM"             
+# [13] "C6"                 "C7:IMMUNESIGDB"     "C7:VAX"            
+# [16] "C8"                 "C5:GO:BP"           "C5:GO:CC"          
+# [19] "C5:GO:MF"           "H"                  "C5:HPO"            
+# [22] "C2:CP:KEGG_MEDICUS" "C2:CP:REACTOME"     "C2:CP:WIKIPATHWAYS"
+# [25] "C2:CP" 
+unique(msigdb$subcollection)
+# [1] "C1"                 "C2:CGP"             "C2:CP:BIOCARTA"    
+# [4] "C2:CP:KEGG_LEGACY"  "C2:CP:PID"          "C3:MIR:MIRDB"      
+# [7] "C3:MIR:MIR_LEGACY"  "C3:TFT:GTRD"        "C3:TFT:TFT_LEGACY" 
+# [10] "C4:3CA"             "C4:CGN"             "C4:CM"             
+# [13] "C6"                 "C7:IMMUNESIGDB"     "C7:VAX"            
+# [16] "C8"                 "C5:GO:BP"           "C5:GO:CC"          
+# [19] "C5:GO:MF"           "H"                  "C5:HPO"            
+# [22] "C2:CP:KEGG_MEDICUS" "C2:CP:REACTOME"     "C2:CP:WIKIPATHWAYS"
+# [25] "C2:CP" 
+
+# convert to list[hallmarker] required by irGSEA package
+msigdb.h <- msigdb %>% 
+  dplyr::filter(collection=="H") %>% 
+  dplyr::select(c("geneset", "symbol"))
+msigdb.h$geneset <- factor(msigdb.h$geneset)
+msigdb.h <- msigdb.h %>% 
+  dplyr::group_split(geneset, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(symbol) %>% unique(.)) %>%
+  purrr::set_names(levels(msigdb.h$geneset))
+
+# convert to list[go bp] required by irGSEA package
+msigdb.go.bp <- msigdb %>% 
+  dplyr::filter(collection=="C5:GO:BP") %>% 
+  dplyr::select(c("geneset", "symbol"))
+msigdb.go.bp$geneset <- factor(msigdb.go.bp$geneset)
+msigdb.go.bp <- msigdb.go.bp %>% 
+  dplyr::group_split(geneset, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(symbol) %>% unique(.)) %>%
+  purrr::set_names(levels(msigdb.go.bp$geneset))
+
+# convert to list[KEGG] required by irGSEA package
+msigdb.kegg <- msigdb %>% 
+  dplyr::filter(collection=="C2:CP:KEGG_MEDICUS") %>% 
+  dplyr::select(c("geneset", "symbol"))
+msigdb.kegg$geneset <- factor(msigdb.kegg$geneset)
+msigdb.kegg <- msigdb.kegg %>% 
+  dplyr::group_split(geneset, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(symbol) %>% unique(.)) %>%
+  purrr::set_names(levels(msigdb.kegg$geneset))
+
+
+# Look for the gene sets associated with angiogenesis from gene sets names and 
+# gene sets descriptions
+
+category <- c("angiogenesis", "vessel")
+
+msigdb.vessel <- list()
+for (i in category) {
+  # Ignore case matching
+  find.index.description <- stringr::str_detect(msigdb$description, pattern = regex(all_of(i), ignore_case=TRUE))
+  find.index.name <- stringr::str_detect(msigdb$geneset, pattern = regex(all_of(i), ignore_case=TRUE))
+  msigdb.vessel[[i]] <- msigdb[find.index.description | find.index.name, ] %>% mutate(category = i)
+  
+}
+msigdb.vessel <- do.call(rbind, msigdb.vessel)
+
+head(msigdb.vessel)
+# # A tibble: 6 × 6
+# collection subcollection                      geneset            description    symbol category
+# <chr>      <chr>                              <chr>              <chr>          <chr>  <chr>   
+#   1 C2:CGP     Chemical and Genetic Perturbations HU_ANGIOGENESIS_UP Up-regulated … HECW1  angioge…
+# 2 C2:CGP     Chemical and Genetic Perturbations HU_ANGIOGENESIS_UP Up-regulated … JADE2  angioge…
+# 3 C2:CGP     Chemical and Genetic Perturbations HU_ANGIOGENESIS_UP Up-regulated … SEMA3C angioge…
+# 4 C2:CGP     Chemical and Genetic Perturbations HU_ANGIOGENESIS_UP Up-regulated … STUB1  angioge…
+# 5 C2:CGP     Chemical and Genetic Perturbations HU_ANGIOGENESIS_UP Up-regulated … FAH    angioge…
+# 6 C2:CGP     Chemical and Genetic Perturbations HU_ANGIOGENESIS_UP Up-regulated … COL7A1 angioge…
+
+length(unique(msigdb.vessel$geneset))
+# [1] 112
+
+# convert gene sets associated with angiogenesis to list 
+# required by irGSEA package
+msigdb.vessel <- msigdb.vessel %>% 
+  dplyr::select(c("geneset", "symbol"))
+msigdb.vessel$geneset <- factor(msigdb.vessel$geneset)
+msigdb.vessel <- msigdb.vessel %>% 
+  dplyr::group_split(geneset, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(symbol) %>% unique(.)) %>%
+  purrr::set_names(levels(msigdb.vessel$geneset))
+
+
+### gmt file ###
+
+# download gmt file
+gmt_url <- "https://data.broadinstitute.org/gsea-msigdb/msigdb/release/2023.2.Hs/msigdb.v2023.2.Hs.symbols.gmt"
+local_gmt <- "./msigdb.v2023.2.Hs.symbols.gmt"
+download.file(gmt_url , local_gmt)
+
+msigdb <- clusterProfiler::read.gmt("./msigdb.v2023.2.Hs.symbols.gmt")
+
+# convert to list[hallmarker] required by irGSEA package
+msigdb.h <- msigdb %>% 
+  dplyr::filter(str_detect(term, pattern = regex("HALLMARK_", ignore_case=TRUE)))
+msigdb.h$term <- factor(msigdb.h$term)
+msigdb.h <- msigdb.h %>% 
+  dplyr::group_split(term, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(gene) %>% unique(.)) %>%
+  purrr::set_names(levels(msigdb.h$term))
+
+# convert to list[go bp] required by irGSEA package
+
+msigdb.go.bp <- msigdb %>% 
+  dplyr::filter(str_detect(term, pattern = regex("GOBP_", ignore_case=TRUE)))
+msigdb.go.bp$term <- factor(msigdb.go.bp$term)
+msigdb.go.bp <- msigdb.go.bp %>% 
+  dplyr::group_split(term, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(gene) %>% unique(.)) %>%
+  purrr::set_names(levels(msigdb.go.bp$term))
+
+# convert to list[KEGG] required by irGSEA package
+msigdb.kegg <- msigdb %>% 
+  dplyr::filter(str_detect(term, pattern = regex("KEGG_", ignore_case=TRUE)))
+msigdb.kegg$term <- factor(msigdb.kegg$term)
+msigdb.kegg <- msigdb.kegg %>% 
+  dplyr::group_split(term, .keep = F) %>%
+  purrr::map( ~.x %>% dplyr::pull(gene) %>% unique(.)) %>%
+  purrr::set_names(levels(msigdb.kegg$term))
+```

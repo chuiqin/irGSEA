@@ -26,30 +26,8 @@ seed = args.seed
 adata = sc.read_h5ad("./temp.h5ad")
 geneset = pd.read_csv("./geneset.csv")
 
-# dc.run_gsva(mat=adata, net=geneset, source='source',
-#            target='target', 
-#            kcdf=kcdf,
-#            min_n=min_n, 
-#            seed=seed, 
-#            use_raw=False)
-
-# # output result
-# adata.obsm['gsva_estimate'].to_csv('./matrix.py.result.csv')
-
-
-if isinstance(adata.X, csr_matrix):
-    data = pd.DataFrame.sparse.from_spmatrix(adata.X)
-elif isinstance(adata.X, np.ndarray):
-    data = pd.DataFrame(adata.X)
-else:
-    raise ValueError("Unsupported data type for adata.X")
-
-
-data.index=adata.obs.index
-data.columns=adata.var.index
-
-acts=dc.run_gsva(
-    mat=data,
+dc.run_viper(
+    mat=adata,
     net=geneset,
     source='source',
     target='target',
@@ -57,6 +35,7 @@ acts=dc.run_gsva(
     use_raw=False
 )
 
-acts.to_csv('./matrix.py.result.csv')
-            
-       
+
+# output result
+adata.obsm['viper_estimate'].to_csv('./matrix.py.result.csv')
+

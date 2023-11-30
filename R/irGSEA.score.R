@@ -4,11 +4,13 @@
 #' AUCell, UCell, singscore, ssgsea, JASMINE and viper. Then, return a Seurat object
 #' including these score matrix.
 #'
-#' @param object Seurat object or scRNA-seq matrix
+#' @param object Seurat object (V4 or V5), Assay object (V4 or V5),
+#' scRNA-seq sparse matrix/matrix/data.frame (Genes X Cells).
 #' @param assay Name of assay to use, defaults to the active assay. The parameter
-#' works when a seurat object is input.
+#' works when a seurat object is input. If input assay object, the assay object
+#' will regarded as RNA assay and included in output Seurat object.
 #' @param slot Default data. The parameter works if a seurat object is input.
-#' VISION or AddModuleScore should be data, and VAM or pagoda2 should be counts.
+#' AddModuleScore, VAM should be data, and VISION, gficf, pagoda2 should be counts.
 #' @param min.cells The minimum detected cells per gene, default 3. The parameter
 #' worsk if a scRNA-seq matrix is input.
 #' @param min.feature The minimum genes per cell, default 0. The parameter works
@@ -23,7 +25,7 @@
 #' be equal to geneset. Each element in the list represent a gene set. The element
 #' is a vector. And the name of vector are gene names. And you can also specify
 #' the weight of each gene by a specific number. The parameter works if parameter
-#' "geneset" is not null and "wsum", "wmean", "mdt", "viper" are selected in "method".
+#' "geneset" is not null and "wsum", "wmean", "mdt", "viper", "Sargent" are selected in "method".
 #' @param msigdb Default True. You can acquire the collection gene sets from
 #' msigdb database. It will be ignored when custom is set to true.
 #' @param species Default Homo sapiens. Use msigdbr::msigdbr_show_species() to view
@@ -114,7 +116,7 @@
 #'               gene interaction confidence.
 #'
 #'               `GSVApy (https://doi.org/10.1038/ng.3593)`:
-#'               The python version of GSVA is wrapped by the decoupleR package.
+#'               The python version of GSVA is wrapped by the decoupler-py package.
 #'
 #'               `gficf (https://doi.org/10.1093/nargab/lqad024)`:
 #'               gficf takes advantage of the informative biological signals spreading
@@ -145,6 +147,9 @@
 #'               coefficient of right-singular vector in SVD of this matrix is
 #'               extracted as enrichment scores.
 #'
+#'               `ssGSEApy (https://doi.org/10.1093/bioinformatics/btac757)`:
+#'               The python version of ssGSEA is wrapped by the python package GSEApy.
+#'
 #'               `AddModuleScore (https://doi.org/10.1126/science.aad0501)`:
 #'               Calculate the average expression levels of each program (cluster)
 #'               on single cell level, subtracted by the aggregated expression of
@@ -158,6 +163,14 @@
 #'               subsequently. Then, the enrichment scores of each gene set is
 #'               quantified by its first weighted principal component.
 #'
+#'               `Sargent (https://doi.org/10.1016/j.mex.2023.102196)`:
+#'               Sargent sorts non-zero expressed genes from high to low expression for
+#'               a given cell, and transforms an input gene-by-cell expression matrix
+#'               into a corresponding gene-set-by-cell assignment score matrix. Then,
+#'               Sargent calculates a gini-index among assignment scores per cell,
+#'               transforming the gene-set-by-cell assignment score matrix to a
+#'               distribution of indexes.
+#'
 #' @param aucell.MaxRank The threshold to calculate the AUC. Default only the top 5%
 #'  of the expressed genes are used to checks whether the gene set are within
 #'  the top 5% when it set to NULL. You can inputc special number, such as 1500,
@@ -170,8 +183,23 @@
 #' logarithmic scale. Other option is "Poisson" if input expression values are
 #' integer counts. The parameter works if "ssgsea" is selected in "method".
 #' @param JASMINE.method Default oddsratio. You can choose oddsratio or likelihood.
+#' @param VISION.latentSpace latent space for expression data. Numeric matrix
+#' or dataframe with dimensions CELLS x COMPONENTS. Latent space will be used to
+#' create the neighbors graph. if a latent space has been computed elsewhere
+#' (either via PCA, or other factor analysis methods such as Harmony, ZIFA,
+#' ZINB-WaVE or scVI) it can be provided via the latentSpace argument as
+#' a data frame. When the input to VISION.latentSpace is present, the inputs to
+#' VISION.dimRed and VISION.dimRedComponents are ignored.
+#' @param VISION.dimRed Dimensionality reduction of Seurat object to use for
+#' the latentSpace. Default is to look for "pca" and use that if it exists. Of
+#' course, you can also enter "harmony", if you want to execute VISION in
+#' the harmony dimension.
+#' @param VISION.dimRedComponents number of components to use for the selected
+#' dimensionality reduction. Default is to use all components.
 #'
-#' @return a Seurat object including score matrix.
+#' @return Seurat object including score matrix. If input Seurat object (V4) or
+#' Assay object (V4), return Seurat object (V4) including score matrix. If input
+#' Seurat object (V5) or  Assay object (V5), return Seurat object (V5) including score matrix.
 #' @export
 #'
 #' @examples
@@ -182,16 +210,43 @@
 #' library(SeuratData)
 #' # download 3k PBMCs from 10X Genomics
 #' InstallData("pbmc3k")
+#' library(Seurat)
+#'
+#' # Seurat object (V4)
+#' library(RcppML)
+#' library(irGSEA)
 #' data("pbmc3k.final")
 #' pbmc3k.final <- SeuratObject::UpdateSeuratObject(pbmc3k.final)
-#'
-#' # Seurat object
 #' pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA", slot = "data",
 #' msigdb = T, species = "Homo sapiens", category = "H", geneid = "symbol",
 #' method = c("AUCell", "UCell", "singscore", "ssgsea"), kcdf = 'Gaussian')
 #'
-#' # data.fram, matrix, or dgmatrix
-#' pbmc3k.final2 <- irGSEA.score(object = pbmc3k.final@@assays$RNA@@counts,
+#'
+#' # Seurat object (V5)
+#' data("pbmc3k.final")
+#' pbmc3k.final <- SeuratObject::UpdateSeuratObject(pbmc3k.final)
+#' pbmc3k.final2 <- CreateSeuratObject(counts = CreateAssay5Object(
+#' GetAssayData(pbmc3k.final, assay = "RNA", slot = "counts")),
+#' meta.data = pbmc3k.final[[]])
+#' pbmc3k.final2 <- NormalizeData(pbmc3k.final2)
+#' pbmc3k.final2 <- irGSEA.score(object = pbmc3k.final2, assay = "RNA", slot = "data",
+#' msigdb = T, species = "Homo sapiens", category = "H", geneid = "symbol",
+#' method = c("AUCell", "UCell", "singscore", "ssgsea"), kcdf = 'Gaussian')
+#'
+#' # Assay object (V5)
+#' data("pbmc3k.final")
+#' pbmc3k.final <- SeuratObject::UpdateSeuratObject(pbmc3k.final)
+#' pbmc3k.final3 <- CreateAssay5Object(counts = GetAssayData(pbmc3k.final,
+#' assay = "RNA", slot = "counts"))
+#' pbmc3k.final3 <- NormalizeData(pbmc3k.final3)
+#' pbmc3k.final3 <- irGSEA.score(object = pbmc3k.final3, assay = "RNA", slot = "data",
+#' msigdb = T, species = "Homo sapiens", category = "H", geneid = "symbol",
+#' method = c("AUCell", "UCell", "singscore", "ssgsea"), kcdf = 'Gaussian')
+
+#'
+#' # Data.fram, Matrix, or dgmatrix
+#' pbmc3k.final2 <- irGSEA.score(object = GetAssayData(pbmc3k.final,
+#' assay = "RNA", slot = "counts"),
 #' assay = "RNA", slot = "data", min.cells = 3, min.feature = 0,
 #' method = c("AUCell", "UCell", "singscore", "ssgsea"), kcdf = 'Poisson')
 #'
@@ -216,27 +271,68 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                          geneid = "symbol", minGSSize = 1, maxGSSize = 500,
                          method = c("AUCell", "UCell", "singscore", "ssgsea"),
                          aucell.MaxRank = NULL, ucell.MaxRank = NULL,
-                         kcdf = 'Gaussian', JASMINE.method = "oddsratio"){
+                         kcdf = 'Gaussian', JASMINE.method = "oddsratio",
+                         VISION.latentSpace = NULL, VISION.dimRed = NULL,
+                         VISION.dimRedComponents = NULL){
 
   #### Set random seeds
   set.seed(seeds)
 
+
+
   #### 00.prepare data ####
+
+  #  check Seurat version
+  if (utils::packageVersion("Seurat") >= "5.0.0") {
+    options(Seurat.object.assay.version = "v5")
+  }
+
+
+  # if Seurat object
   if (all(methods::is(object)=="Seurat")){
 
-    if (purrr::is_null(assay)){assay <- Seurat::DefaultAssay(object)}
-
     object <- SeuratObject::UpdateSeuratObject(object)
+    if (purrr::is_null(assay)){assay <- Seurat::DefaultAssay(object)}
     my.matrix <- SeuratObject::GetAssayData(object, assay = assay, slot = slot)
 
-  }else{
+  }
+
+  # if dgCMatrix, Matrix or data.frame
+  if (any(methods::is(object) %in% c("dgCMatrix","Matrix", "data.frame"))) {
+    object <- SeuratObject::CreateSeuratObject(counts = object,
+                                               project = "irGSEA",
+                                               assay = "RNA",
+                                               min.cells = min.cells,
+                                               min.feature = min.feature)
+    my.matrix <- SeuratObject::GetAssayData(object, assay = "RNA", slot = "counts")
+    assay = "RNA"
+  }
+
+  # if Assay5, Assay
+  if (any(methods::is(object) %in% c("Assay5", "Assay"))) {
 
     object <- SeuratObject::CreateSeuratObject(counts = object,
                                                project = "irGSEA",
                                                assay = "RNA",
                                                min.cells = min.cells,
                                                min.feature = min.feature)
-    my.matrix <- SeuratObject::GetAssayData(object, assay = "RNA", slot = "counts")}
+    my.matrix <- SeuratObject::GetAssayData(object, assay = "RNA", slot = slot)
+    assay = "RNA"
+  }
+
+  # convert v5 to v3
+  if (class(object[[assay]])[1] == "Assay5") {
+    object[[assay]] <- methods::as(object = object[[assay]], Class = "Assay")
+    Seurat.treated <- T
+  }else{
+    Seurat.treated <- F
+  }
+
+  # continue v3
+  if (utils::packageVersion("Seurat") >= "5.0.0") {
+    options(Seurat.object.assay.version = "v3")
+  }
+
 
   #### 01.prepare geneset ####
 
@@ -460,6 +556,9 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     if (! "irGSEA" %in% reticulate::conda_list()$name) {
       reticulate::conda_create("irGSEA")
     }
+
+
+
   }
 
 
@@ -469,13 +568,17 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     message("Calculate AUCell scores")
     h.gsets.list.aucell <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
     aucell.scores.list <- list()
+
     for (k in seq_along(my.matrix.list)) {
       # calculate the rank matrix
       aucell.rank <- AUCell::AUCell_buildRankings(my.matrix[, my.matrix.list[[k]]],
                                                   plotStats = F,
                                                   verbose = F,
                                                   splitByBlocks = TRUE)
+      gc()
+
       if (purrr::is_null(aucell.MaxRank)){aucell.MaxRank = ceiling(0.05 * nrow(aucell.rank))}
+
       aucell.scores <- AUCell::AUCell_calcAUC(h.gsets.list.aucell,
                                               aucell.rank,
                                               nCores = ncores,
@@ -483,17 +586,22 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                                               verbose = F)
       aucell.scores <- SummarizedExperiment::assay(aucell.scores)
       aucell.scores.list[[k]] <- aucell.scores
+      gc()
     }
     aucell.scores.list <- do.call(cbind, aucell.scores.list)
     object[["AUCell"]] <- SeuratObject::CreateAssayObject(counts = aucell.scores.list)
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = aucell.scores.list, assay = "AUCell")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["AUCell"]]$counts <- NULL}
     message("Finish calculate AUCell scores")
     rm(aucell.rank)
     rm(aucell.scores.list)
     gc()
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
 
@@ -512,10 +620,14 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object[["UCell"]] <- SeuratObject::CreateAssayObject(counts = t(ucell.scores))
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = t(ucell.scores), assay = "UCell")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["UCell"]]$counts <- NULL}
     message("Finish calculate UCell scores")
     rm(ucell.scores)
     gc()
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
   #### 06.calculate singscore scores ####
@@ -569,13 +681,17 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object[["singscore"]] <- SeuratObject::CreateAssayObject(counts = t(singscore.scores.list))
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = t(singscore.scores.list), assay = "singscore")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["singscore"]]$counts <- NULL}
     message("Finish calculate singscore scores")
     rm(singscore.rank)
     rm(singscore.scores)
     rm(singscore.scores.list)
     gc()
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
   #### 07.calculate ssgsea scores ####
@@ -592,17 +708,22 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                                             ssgsea.norm = F,
                                             parallel.sz = ncores,
                                             verbose = F)
+      gc()
 
     }
     ssgsea.scores.list <- do.call(cbind, ssgsea.scores.list)
     object[["ssgsea"]] <- SeuratObject::CreateAssayObject(counts = ssgsea.scores.list)
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = as.matrix(ssgsea.scores.list), assay = "ssgsea")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["ssgsea"]]$counts <- NULL}
     message("Finish calculate ssgsea scores")
     rm(ssgsea.scores.list)
     gc()
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
   #### 08.calculate JASMINE scores ####
@@ -705,17 +826,22 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
       jasmine.scores <- do.call(cbind, jasmine.scores)
       jasmine.scores.list[[k]] <- jasmine.scores
+      gc()
     }
 
     jasmine.scores.list <- do.call(rbind, jasmine.scores.list)
     object[["JASMINE"]] <- SeuratObject::CreateAssayObject(counts = t(jasmine.scores.list))
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = t(jasmine.scores.list), assay = "JASMINE")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["JASMINE"]]$counts <- NULL}
     message("Finish calculate jasmine scores")
     rm(jasmine.scores)
     rm(jasmine.scores.list)
     gc()
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
 
@@ -745,6 +871,8 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                            new.data = as.matrix(SeuratObject::GetAssayData(object2, assay = "VAMcdf", slot = "counts")),
                                            assay = "VAM")
+      if (utils::packageVersion("Seurat") >= "5.0.0") {
+        object[["VAM"]]$counts <- NULL}
       message("Finish calculate VAM scores")
       rm(object2)
       gc()
@@ -755,7 +883,9 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       message("VAM needs normalized counts. And assay should be RNA or SCT, slot should be data.")
     }
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
   #### 10.single-cell-signature-explorer ####
@@ -771,14 +901,19 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     scSE.scores.list <- list()
     for (k in seq_along(my.matrix.list)) {
       my.matrix.subset <- my.matrix[, my.matrix.list[[k]]]
-      umi.sum <- apply(my.matrix.subset, 2, sum)
+      # umi.sum <- apply(my.matrix.subset, 2, sum)
+      umi.sum <- sparseMatrixStats::colSums2(my.matrix.subset,
+                                             na.rm = T)
       scSE.scores <- BiocParallel::bplapply(
         X = seq_along(h.gsets.list.scSE),
         BPPARAM =  BPPARAM,
         FUN = function(x) {
 
-          umi.geneset <- apply(my.matrix.subset[intersect(h.gsets.list.scSE[[x]], rownames(my.matrix.subset)),],
-                               2, sum)
+          # umi.geneset <- apply(my.matrix.subset[intersect(h.gsets.list.scSE[[x]], rownames(my.matrix.subset)),],
+          #                      2, sum)
+          umi.geneset <- sparseMatrixStats::colSums2(my.matrix.subset,
+                                                     rows = which(rownames(my.matrix.subset) %in% h.gsets.list.scSE[[x]]),
+                                                     na.rm = T)
           scse.result <- data.frame(umi.geneset/umi.sum*100,
                                     row.names = colnames(my.matrix.subset))
           colnames(scse.result) <- names(h.gsets.list.scSE)[x]
@@ -796,12 +931,16 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = t(scSE.scores.list),
                                          assay = "scSE")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["scSE"]]$counts <- NULL}
     message("Finish calculate scSE scores")
     rm(scSE.scores)
     rm(scSE.scores.list)
     gc()
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
 
@@ -841,10 +980,37 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
     }
 
-    vision.obj <- VISION::Vision(object,
-                                 signatures = sigs,
-                                 projection_methods = NULL,
-                                 assay = assay)
+
+    if (is.null(VISION.latentSpace)) {
+
+      if (length(SeuratObject::Reductions(object)) == 0) {
+        object <- Seurat::NormalizeData(object, assay = assay)
+        object <- Seurat::FindVariableFeatures(object, assay = assay)
+        object <- Seurat::ScaleData(object, assay = assay)
+        object <- Seurat::RunPCA(object, verbose = F, assay = assay)
+      }
+
+      vision.obj <- VISION::Vision(object,
+                                   signatures = sigs,
+                                   min_signature_genes = minGSSize,
+                                   projection_methods = NULL,
+                                   assay = assay,
+                                   pool = F,
+                                   dimRed = VISION.dimRed,
+                                   dimRedComponents = VISION.dimRedComponents)
+    }else{
+      vision.obj <- VISION::Vision(object,
+                                   signatures = sigs,
+                                   min_signature_genes = minGSSize,
+                                   projection_methods = NULL,
+                                   assay = assay,
+                                   pool = F,
+                                   latentSpace = VISION.latentSpace)
+    }
+
+    if (.Platform$OS.type != "windows") {
+      options(mc.cores = ncores)
+    }
     vision.obj <- VISION::analyze(vision.obj)
     sigScores <- VISION::getSignatureScores(vision.obj)
 
@@ -852,19 +1018,23 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = t(sigScores),
                                          assay = "VISION")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["VISION"]]$counts <- NULL}
     message("Finish calculate VISION scores")
     rm(vision.obj)
     rm(sigScores)
     gc()
 
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
 
 
-  #### 13.calculate decoupler scores ####
-  tryCatch({if (any(c("wmean", "wsum", "mdt", "viper",  "GSVApy") %in% method)) {
+  #### 12.calculate decoupler scores ####
+  tryCatch({if (any(c("wmean", "wsum", "mdt", "viper",  "GSVApy", "viperpy") %in% method)) {
 
 
     # install.package from Bioconductor
@@ -921,6 +1091,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
     net <- do.call(rbind, h.gsets.list.decoupler)
 
+    #### wmean  ####
     if ("wmean" %in% method) {
       message("Calculate wmean scores")
       # Run wmean
@@ -947,9 +1118,12 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                            new.data = t(acts),
                                            assay = "wmean")
+      if (utils::packageVersion("Seurat") >= "5.0.0") {
+        object[["wmean"]]$counts <- NULL}
       message("Finish calculate wmean scores")
     }
 
+    #### wsum  ####
     if ("wsum" %in% method) {
       message("Calculate wsum scores")
       # Run wsum
@@ -976,10 +1150,12 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                            new.data = t(acts),
                                            assay = "wsum")
+      if (utils::packageVersion("Seurat") >= "5.0.0") {
+        object[["wsum"]]$counts <- NULL}
       message("Finish calculate wsum scores")
     }
 
-
+    #### mdt  ####
     if ("mdt" %in% method) {
       message("Calculate mdt scores")
       # Run mdt
@@ -1004,11 +1180,13 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                            new.data = t(acts),
                                            assay = "mdt")
+      if (utils::packageVersion("Seurat") >= "5.0.0") {
+        object[["mdt"]]$counts <- NULL}
       message("Finish calculate mdt scores")
 
     }
 
-
+    #### viper  ####
     if ("viper" %in% method) {
       message("Calculate viper scores")
 
@@ -1028,6 +1206,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                                                          .mor='weight',
                                                          minsize = minGSSize,
                                                          cores = ncores)
+          gc()
           source <- NULL
           viper.scores.list[[k]] <- viper.scores.list[[k]] %>%
             dplyr::filter(source != unique(paste0(net$source[1:nrow(net)], "_copy")))
@@ -1040,6 +1219,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                                                          .mor='weight',
                                                          minsize = minGSSize,
                                                          cores = ncores)
+          gc()
         }
 
 
@@ -1058,11 +1238,15 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                            new.data = acts,
                                            assay = "viper")
+      if (utils::packageVersion("Seurat") >= "5.0.0") {
+        object[["viper"]]$counts <- NULL}
       rm(viper.scores.list)
       message("Finish calculate viper scores")
 
     }
 
+
+    #### GSVApy  ####
     tryCatch({if (any(c("GSVApy") %in% method)) {
 
       message("Calculate GSVApy scores")
@@ -1082,22 +1266,55 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
         reticulate::conda_create("irGSEA")
       }
 
-      if (!reticulate::py_module_available(c("anndata", "scanpy", "decoupler", "argparse"))) {
-        reticulate::conda_install(envname = "irGSEA",
-                                  packages = c("anndata", "scanpy", "decoupler",
-                                               "argparse"),
-                                  pip = T)
+      # if python package exist
+      python.package <- reticulate::py_list_packages(envname = "irGSEA")$package
+      if (! all(c("anndata", "scanpy", "decoupler", "argparse") %in%  python.package)) {
+        for (i in c("anndata", "scanpy", "argparse", "decoupler")) {
+          reticulate::conda_install(envname = "irGSEA",
+                                    packages = i,
+                                    pip = T)
+        }
       }
 
+
+
+
       # convert seurat to h5ad
-      seurat2scanpy <- function(x){
-        temp <- SeuratObject::CreateSeuratObject(counts = x, slot = "counts")
+      # seurat2scanpy <- function(x){
+      #   temp <- SeuratObject::CreateSeuratObject(counts = x, slot = "counts")
+      #   SeuratDisk::SaveH5Seurat(temp, filename = "./temp.h5Seurat", overwrite = T)
+      #   SeuratDisk::Convert("./temp.h5Seurat", dest = "h5ad", overwrite = T)
+      #
+      # }
+      #
+      # seurat2scanpy(my.matrix)
+
+      # convert seurat to h5ad
+      seurat2scanpy.file <- function(object, slot, assay){
+        if (slot == "counts") {
+          temp <- Seurat::DietSeurat(object, counts = TRUE, data = FALSE,
+                                     scale.data = FALSE,
+                                     assays = assay)
+        }
+        if (slot == "data") {
+          temp <- Seurat::DietSeurat(object, counts = FALSE, data = TRUE,
+                                     scale.data = FALSE,
+                                     assays = assay)
+        }
+        if (slot == "scale.data") {
+          temp <- Seurat::DietSeurat(object, counts = FALSE, data = FALSE,
+                                     scale.data = TRUE,
+                                     assays = assay)
+        }
+
+
         SeuratDisk::SaveH5Seurat(temp, filename = "./temp.h5Seurat", overwrite = T)
         SeuratDisk::Convert("./temp.h5Seurat", dest = "h5ad", overwrite = T)
 
       }
 
-      seurat2scanpy(my.matrix)
+      seurat2scanpy.file(object, slot, assay)
+
 
       readr::write_csv(net, "./geneset.csv")
 
@@ -1128,7 +1345,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
         min_n.py = stringr::str_c(c("--min_n", minGSSize), collapse = " ")
         seed.py = stringr::str_c(c("--seed", seeds), collapse = " ")
 
-        command = stringr::str_c(c(python, python.file, kcdf.py, min_n.py, seed.py), collapse = " ")
+        command = stringr::str_c(c(shQuote(python), shQuote(python.file), kcdf.py, min_n.py, seed.py), collapse = " ")
         message(command)
         # work
         system(command)
@@ -1140,6 +1357,8 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
         object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                              new.data = t(acts),
                                              assay = "GSVApy")
+        if (utils::packageVersion("Seurat") >= "5.0.0") {
+          object[["GSVApy"]]$counts <- NULL}
         message("Finish calculate GSVApy scores")
       }
       file.remove("./temp.h5Seurat")
@@ -1147,22 +1366,138 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       file.remove("./geneset.csv")
       file.remove("./matrix.py.result.csv")
 
-    }}, error = identity)
+    }}, error = function(e) {
+      cat("Error: ", conditionMessage(e), "\n")
+    })
+
+    #### viperpy  ####
+    tryCatch({if (any(c("viperpy") %in% method)) {
+
+      message("Calculate viperpy scores")
+
+      # install.package from CRAN
+      if (!requireNamespace("reticulate", quietly = TRUE)) {
+        utils::install.packages("reticulate", ask = F, update = F)
+      }
+
+      # install.package from Github
+      if (!requireNamespace("SeuratDisk", quietly = TRUE)) {
+        devtools::install_github("mojaveazure/seurat-disk", force =T)
+      }
+
+      # reticulate::py_config()
+      if (! "irGSEA" %in% reticulate::conda_list()$name) {
+        reticulate::conda_create("irGSEA")
+      }
+
+      # if python package exist
+      python.package <- reticulate::py_list_packages(envname = "irGSEA")$package
+      if (! all(c("anndata", "scanpy", "decoupler", "argparse") %in%  python.package)) {
+        for (i in c("anndata", "scanpy", "argparse", "decoupler")) {
+          reticulate::conda_install(envname = "irGSEA",
+                                    packages = i,
+                                    pip = T)
+        }
+      }
+
+
+      # convert seurat to h5ad
+      seurat2scanpy.file <- function(object, slot, assay){
+        if (slot == "counts") {
+          temp <- Seurat::DietSeurat(object, counts = TRUE, data = FALSE,
+                                     scale.data = FALSE,
+                                     assays = assay)
+        }
+        if (slot == "data") {
+          temp <- Seurat::DietSeurat(object, counts = FALSE, data = TRUE,
+                                     scale.data = FALSE,
+                                     assays = assay)
+        }
+        if (slot == "scale.data") {
+          temp <- Seurat::DietSeurat(object, counts = FALSE, data = FALSE,
+                                     scale.data = TRUE,
+                                     assays = assay)
+        }
+
+
+        SeuratDisk::SaveH5Seurat(temp, filename = "./temp.h5Seurat", overwrite = T)
+        SeuratDisk::Convert("./temp.h5Seurat", dest = "h5ad", overwrite = T)
+
+      }
+
+      seurat2scanpy.file(object, slot, assay)
+
+
+      readr::write_csv(net, "./geneset.csv")
+
+      # prepare
+      name <- NULL
+      python <- NULL
+      python = reticulate::conda_list() %>%
+        dplyr::filter(name == "irGSEA") %>%
+        dplyr::pull(python)
+
+      # viperpy
+      if ("viperpy" %in% method) {
+        message("Calculate viperpy scores")
+
+        python.file = paste0(system.file(package = 'irGSEA'), '/python/viper.py')
+        if(file.exists(python.file)){
+          python.file = python.file
+        }else{
+          python.file = paste0(system.file(package = 'irGSEA'), '/inst/python/viper.py')
+        }
+
+        if (kcdf == 'Gaussian') {
+          kcdf.py = stringr::str_c(c("--kcdf", "True"), collapse = " ")
+        }else{
+          kcdf.py = stringr::str_c(c("--kcdf", "False"), collapse = " ")
+        }
+
+        min_n.py = stringr::str_c(c("--min_n", minGSSize), collapse = " ")
+        seed.py = stringr::str_c(c("--seed", seeds), collapse = " ")
+
+        command = stringr::str_c(c(shQuote(python), shQuote(python.file), kcdf.py, min_n.py, seed.py), collapse = " ")
+        message(command)
+        # work
+        system(command)
+
+        acts <- readr::read_csv("./matrix.py.result.csv")
+        colnames(acts)[1] <- "cell"
+        acts <- acts %>% tibble::column_to_rownames(var = "cell")
+        object[["viperpy"]] <- SeuratObject::CreateAssayObject(counts = t(acts))
+        object <- SeuratObject::SetAssayData(object, slot = "scale.data",
+                                             new.data = t(acts),
+                                             assay = "viperpy")
+        if (utils::packageVersion("Seurat") >= "5.0.0") {
+          object[["viperpy"]]$counts <- NULL}
+        message("Finish calculate viperpy scores")
+      }
+      file.remove("./temp.h5Seurat")
+      file.remove("./temp.h5ad")
+      file.remove("./geneset.csv")
+      file.remove("./matrix.py.result.csv")
+
+    }}, error = function(e) {
+      cat("Error: ", conditionMessage(e), "\n")
+    })
 
 
     rm(acts)
     gc()
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
 
 
 
 
-  #### 14.calculate gficf scores ####
+  #### 13.calculate gficf scores ####
   # gficf = NMF+ssGSEA
-  tryCatch({if ("gficf" %in% method) {
+  if ("gficf" %in% method) {
     message("Calculate gficf scores")
     h.gsets.list.gficf <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
 
@@ -1176,9 +1511,21 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       devtools::install_github("gambalab/gficf", force =T)
     }
 
+    if (!utils::packageVersion("RcppML") > "0.3.7") {
+      message("The version of RcppML should greater than 0.3.7 and install RcppML package from Github")
+      devtools::install_github("zdebruine/RcppML", force =T)
+    }
+
+    if (! slot %in% c("counts")) {
+      stop("gficf only support slot (counts).")
+    }
+
     # prepare data
+
+
     data <- gficf::gficf(M = my.matrix)
     data <- gficf::runPCA(data = data,dim = 10,use.odgenes = T)
+    requireNamespace("RcppML")
 
     # custom function
     myrunScGSEA <- function (data, geneID, species, category, subcategory = NULL,
@@ -1206,18 +1553,18 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
           if (!is.null(data$pca) && data$pca$type == "NMF") {
             if (data$dimPCA < nmf.k || data$pca$use.odgenes) {
               tsmessage("... Performing NMF", verbose = verbose)
-              tmp = RcppML::nmf(A = data$gficf, k = nmf.k)
+              tmp = RcppML::nmf(data$gficf, k = nmf.k)
               data$scgsea$nmf.w <- Matrix::Matrix(data = tmp$w,
                                                   sparse = T,
                                                   dimnames = list(rownames(data$gficf),NULL))
-              data$scgsea$nmf.h <- t(Matrix::Matrix(data = tmp$h,
-                                                    sparse = T,
-                                                    dimnames = list(NULL,colnames(data$gficf))))
+              data$scgsea$nmf.h <- Matrix::t(Matrix::Matrix(data = tmp$h,
+                                                            sparse = T,
+                                                            dimnames = list(NULL,colnames(data$gficf))))
               rm(tmp)
               gc()
             }else {
               tsmessage(paste0("Found NMF reduction with k greaten or equal to ",
-                                       nmf.k), verbose = T)
+                               nmf.k), verbose = T)
               pointr::ptr("tmp", "data$pca$genes")
               data$scgsea$nmf.w = tmp
               pointr::ptr("tmp2", "data$pca$cells")
@@ -1228,13 +1575,15 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
             }
           }else {
             tsmessage("... Performing NMF", verbose = verbose)
-            tmp = RcppML::nmf(data$gficf, k = nmf.k)
+
+            tmp = RcppML::nmf(data = data$gficf, k = nmf.k)
             data$scgsea$nmf.w <- Matrix::Matrix(data = tmp$w,
                                                 sparse = T,
                                                 dimnames = list(rownames(data$gficf),NULL))
-            data$scgsea$nmf.h <- t(Matrix::Matrix(data = tmp$h,
-                                                  sparse = T,
-                                                  dimnames = list(NULL,colnames(data$gficf))))
+
+            data$scgsea$nmf.h <- Matrix::t(Matrix::Matrix(data = tmp$h,
+                                                          sparse = T,
+                                                          dimnames = list(NULL,colnames(data$gficf))))
             rm(tmp)
             gc()
           }
@@ -1243,16 +1592,16 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
           tmp = RcppML::nmf(log1p(data$rawCounts), k = nmf.k)
           data$scgsea$nmf.w <- Matrix::Matrix(data = tmp$w,
                                               sparse = T)
-          data$scgsea$nmf.h <- t(Matrix::Matrix(data = tmp$h,
-                                                sparse = T))
+          data$scgsea$nmf.h <- Matrix::t(Matrix::Matrix(data = tmp$h,
+                                                        sparse = T))
           rm(tmp)
           gc()
         }
       }else {
         tsmessage("Found a previous scGSEA, thus the already computed NMF will be used",
-                          verbose = T)
+                  verbose = T)
         tsmessage("If you want to recompute NMF, please call resetScGSEA first",
-                          verbose = T)
+                  verbose = T)
         data$scgsea$es <- NULL
         data$scgsea$nes <- NULL
         data$scgsea$pval <- NULL
@@ -1313,7 +1662,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       }
       data$scgsea$x = data$scgsea$nes
       data$scgsea$x[data$scgsea$x < 0 | data$scgsea$fdr >= fdr.th] = 0
-      data$scgsea$x = Matrix::Matrix(data = data$scgsea$nmf.h %*% t(data$scgsea$x), sparse = T)
+      data$scgsea$x = Matrix::Matrix(data = data$scgsea$nmf.h %*% Matrix::t(data$scgsea$x), sparse = T)
       data$scgsea$stat = df[, c("pathway", "size")]
 
       # def function
@@ -1322,8 +1671,8 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
       data$scgsea$x = data$scgsea$x[, armaColSum(data$scgsea$x) > 0]
       if (rescale != "none") {
         if (rescale == "byGS") {
-          data$scgsea$x = t(data$scgsea$x)
-          data$scgsea$x = t((data$scgsea$x - rowMeans(data$scgsea$x))/apply(data$scgsea$x, 1, stats::sd))
+          data$scgsea$x = Matrix::t(data$scgsea$x)
+          data$scgsea$x = Matrix::t((data$scgsea$x - rowMeans(data$scgsea$x))/apply(data$scgsea$x, 1, stats::sd))
         }
         if (rescale == "byCell") {
           data$scgsea$x = (data$scgsea$x - rowMeans(data$scgsea$x))/apply(data$scgsea$x, 1, stats::sd)
@@ -1351,19 +1700,21 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                         verbose = T,
                         nt = ncores)
 
-    object[["gficf"]] <- SeuratObject::CreateAssayObject(counts = t(data$scgsea$x))
+    object[["gficf"]] <- SeuratObject::CreateAssayObject(counts = Matrix::t(data$scgsea$x))
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
-                                         new.data = as.matrix(t(data$scgsea$x)),
+                                         new.data = as.matrix(Matrix::t(data$scgsea$x)),
                                          assay = "gficf")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["gficf"]]$counts <- NULL}
     message("Finish calculate gficf scores")
     rm(data)
     gc()
 
 
-  }}, error = identity)
+  }
 
 
-  #### 15.calculate GSVA scores ####
+  #### 14.calculate GSVA scores ####
   tryCatch({if ("GSVA" %in% method) {
     message("Calculate GSVA scores")
     h.gsets.list.GSVA <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
@@ -1379,14 +1730,18 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object[["GSVA"]] <- SeuratObject::CreateAssayObject(counts = GSVA.scores.list)
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = as.matrix(GSVA.scores.list), assay = "GSVA")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["GSVA"]]$counts <- NULL}
     message("Finish calculate GSVA scores")
     rm(GSVA.scores.list)
     gc()
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
-  #### 16.calculate zscore scores ####
+  #### 15.calculate zscore scores ####
   tryCatch({if ("zscore" %in% method) {
     message("Calculate zscore scores")
     h.gsets.list.zscore <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
@@ -1404,14 +1759,18 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = as.matrix(zscore.scores.list),
                                          assay = "zscore")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["zscore"]]$counts <- NULL}
     message("Finish calculate zscore scores")
     rm(zscore.scores.list)
     gc()
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
-  #### 17.calculate plage scores ####
+  #### 16.calculate plage scores ####
   tryCatch({if ("plage" %in% method) {
     message("Calculate plage scores")
     h.gsets.list.plage <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
@@ -1428,129 +1787,152 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object[["plage"]] <- SeuratObject::CreateAssayObject(counts = plage.scores.list)
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = as.matrix(plage.scores.list), assay = "plage")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["plage"]]$counts <- NULL}
     message("Finish calculate plage scores")
     rm(plage.scores.list)
     gc()
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
 
 
 
-  #### 18.calculate ssgsea.py scores ####
+  #### 17.calculate ssgsea.py scores ####
 
-  # if ("ssGSEApy" %in% method) {
-  #   message("Calculate ssGSEApy scores")
-  #   h.gsets.list.ssgsea.py <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
-  #
-  #   # install.package from CRAN
-  #   if (!requireNamespace("reticulate", quietly = TRUE)) {
-  #     install.packages("reticulate", ask = F, update = F)
-  #   }
-  #
-  #   # install.package from Github
-  #   if (!requireNamespace("SeuratDisk", quietly = TRUE)) {
-  #     devtools::install_github("mojaveazure/seurat-disk", force =T)
-  #   }
-  #
-  #   # reticulate::py_config()
-  #   if (! "irGSEA" %in% reticulate::conda_list()$name) {
-  #     reticulate::conda_create("irGSEA")
-  #   }
-  #   if (! reticulate::py_module_available(c("anndata", "scanpy", "gseapy", "argparse"))) {
-  #     reticulate::conda_install(envname = "irGSEA",
-  #                               packages = c("anndata", "scanpy", "gseapy",
-  #                                            "argparse"),
-  #                               pip = T)
-  #   }
-  #
-  #
-  #   # convert seurat to h5ad
-  #   seurat2scanpy <- function(object, slot, assay){
-  #     if (slot == "counts") {
-  #       temp <- Seurat::DietSeurat(object, counts = TRUE, data = FALSE,
-  #                                  scale.data = FALSE,
-  #                                  assays = assay)
-  #     }
-  #     if (slot == "data") {
-  #       temp <- Seurat::DietSeurat(object, counts = FALSE, data = TRUE,
-  #                                  scale.data = FALSE,
-  #                                  assays = assay)
-  #     }
-  #     if (slot == "scale.data") {
-  #       temp <- Seurat::DietSeurat(object, counts = FALSE, data = FALSE,
-  #                                  scale.data = TRUE,
-  #                                  assays = assay)
-  #     }
-  #
-  #
-  #     SeuratDisk::SaveH5Seurat(temp, filename = "./temp.h5Seurat", overwrite = T)
-  #     SeuratDisk::Convert("./temp.h5Seurat", dest = "h5ad", overwrite = T)
-  #
-  #   }
-  #
-  #   seurat2scanpy(object, assay, slot)
-  #
-  #
-  #   for (i in seq_along(h.gsets.list.ssgsea.py)) {
-  #     h.gsets.list.ssgsea.py[[i]] <- data.frame(source = names(h.gsets.list.ssgsea.py)[i],
-  #                                                  target = h.gsets.list.ssgsea.py[[i]])
-  #   }
-  #   net <- do.call(rbind, h.gsets.list.ssgsea.py)
-  #   readr::write_csv(net, "./geneset.csv")
-  #
-  #   # write gmt file
-  #   write.mygmt <- function(geneSet = h.gsets.list.ssgsea.py,  gmt_file ='./geneset.gmt'){
-  #     sink(gmt_file)
-  #     for (i in 1:length(geneSet)){
-  #       cat(names(geneSet)[i])
-  #       cat('\ttemp\t')
-  #       cat(paste(geneSet[[i]],collapse = '\t'))
-  #       cat('\n')
-  #     }
-  #     sink()
-  #   }
-  #
-  #   write.mygmt(h.gsets.list.ssgsea.py, './geneset.gmt')
-  #
-  #   python.file = paste0(system.file(package = 'irGSEA'), '/python/ssgsea.py')
-  #   if(file.exists(python.file)){
-  #     python.file = python.file
-  #   }else{
-  #     python.file = paste0(system.file(package = 'irGSEA'), '/inst/python/ssgsea.py')
-  #   }
-  #
-  #
-  #
-  #   min_size.py = stringr::str_c(c("--min_size", minGSSize), collapse = " ")
-  #   max_size.py = stringr::str_c(c("--max_size", maxGSSize), collapse = " ")
-  #   seed.py = stringr::str_c(c("--seed", seeds), collapse = " ")
-  #   threads.py = stringr::str_c(c("--threads", ncores), collapse = " ")
-  #
-  #   command = stringr::str_c(c(python, python.file, min_size.py, max_size.py, seed.py, threads.py), collapse = " ")
-  #   message(command)
-  #   # work
-  #   system(command)
-  #
-  #   acts <- readr::read_csv("./matrix.py.result.csv")
-  #   colnames(acts)[1] <- "cell"
-  #   acts <- acts %>% tibble::column_to_rownames(var = "cell")
-  #
-  #
-  #   object[["ssGSEApy"]] <- SeuratObject::CreateAssayObject(counts = act)
-  #   message("Finish calculate ssGSEApy scores")
-  #   file.remove("./temp.h5Seurat")
-  #   file.remove("./temp.h5ad")
-  #   file.remove("./geneset.csv")
-  #   file.remove("./matrix.py.result.csv")
-  #   rm(acts)
-  #   gc()
-  #
-  #
-  # }
-  #
-  #
+  tryCatch({if ("ssGSEApy" %in% method) {
+    message("Calculate ssGSEApy scores")
+    h.gsets.list.ssgsea.py <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
+
+    # install.package from CRAN
+    if (!requireNamespace("reticulate", quietly = TRUE)) {
+      utils::install.packages("reticulate", ask = F, update = F)
+    }
+
+    # install.package from Github
+    if (!requireNamespace("SeuratDisk", quietly = TRUE)) {
+      devtools::install_github("mojaveazure/seurat-disk", force =T)
+    }
+
+    # reticulate::py_config()
+    if (! "irGSEA" %in% reticulate::conda_list()$name) {
+      reticulate::conda_create("irGSEA")
+    }
+
+    # if python package exist
+    python.package <- reticulate::py_list_packages(envname = "irGSEA")$package
+    if (! all(c("anndata", "scanpy", "argparse", "gseapy") %in%  python.package)) {
+      for (i in c("anndata", "scanpy", "argparse", "gseapy")) {
+        reticulate::conda_install(envname = "irGSEA",
+                                  packages = i,
+                                  pip = T)
+      }
+    }
+
+    # prepare
+    name <- NULL
+    python <- NULL
+    python = reticulate::conda_list() %>%
+      dplyr::filter(name == "irGSEA") %>%
+      dplyr::pull(python)
+
+    # convert seurat to h5ad
+    seurat2scanpy.file <- function(object, slot, assay){
+      if (slot == "counts") {
+        temp <- Seurat::DietSeurat(object, counts = TRUE, data = FALSE,
+                                   scale.data = FALSE,
+                                   assays = assay)
+      }
+      if (slot == "data") {
+        temp <- Seurat::DietSeurat(object, counts = FALSE, data = TRUE,
+                                   scale.data = FALSE,
+                                   assays = assay)
+      }
+      if (slot == "scale.data") {
+        temp <- Seurat::DietSeurat(object, counts = FALSE, data = FALSE,
+                                   scale.data = TRUE,
+                                   assays = assay)
+      }
+
+
+      SeuratDisk::SaveH5Seurat(temp, filename = "./temp.h5Seurat", overwrite = T)
+      SeuratDisk::Convert("./temp.h5Seurat", dest = "h5ad", overwrite = T)
+
+    }
+
+    seurat2scanpy.file(object, slot, assay)
+
+
+    for (i in seq_along(h.gsets.list.ssgsea.py)) {
+      h.gsets.list.ssgsea.py[[i]] <- data.frame(source = names(h.gsets.list.ssgsea.py)[i],
+                                                target = h.gsets.list.ssgsea.py[[i]])
+    }
+    net <- do.call(rbind, h.gsets.list.ssgsea.py)
+    readr::write_csv(net, "./geneset.csv")
+
+    # write gmt file
+    write.mygmt <- function(geneSet = h.gsets.list.ssgsea.py,  gmt_file ='./geneset.gmt'){
+      sink(gmt_file)
+      for (i in 1:length(geneSet)){
+        cat(names(geneSet)[i])
+        cat('\ttemp\t')
+        cat(paste(geneSet[[i]],collapse = '\t'))
+        cat('\n')
+      }
+      sink()
+    }
+
+    write.mygmt(h.gsets.list.ssgsea.py, './geneset.gmt')
+
+    python.file = paste0(system.file(package = 'irGSEA'), '/python/ssgsea.py')
+    if(file.exists(python.file)){
+      python.file = python.file
+    }else{
+      python.file = paste0(system.file(package = 'irGSEA'), '/inst/python/ssgsea.py')
+    }
+
+
+
+    min_size.py = stringr::str_c(c("--min_size", minGSSize), collapse = " ")
+    max_size.py = stringr::str_c(c("--max_size", maxGSSize), collapse = " ")
+    seed.py = stringr::str_c(c("--seed", seeds), collapse = " ")
+    threads.py = stringr::str_c(c("--threads", ncores), collapse = " ")
+
+    command = stringr::str_c(c(shQuote(python), shQuote(python.file), min_size.py, max_size.py, seed.py, threads.py), collapse = " ")
+    message(command)
+    # work
+    system(command)
+
+    acts <- readr::read_csv("./matrix.py.result.csv")
+    colnames(acts)[1] <- "cell"
+    acts <- acts %>% tibble::column_to_rownames(var = "cell")
+
+
+    object[["ssGSEApy"]] <- SeuratObject::CreateAssayObject(counts = as.matrix(acts))
+    object <- SeuratObject::SetAssayData(object, slot = "scale.data",
+                                         new.data = as.matrix(acts),
+                                         assay = "ssGSEApy")
+
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["ssGSEApy"]]$counts <- NULL}
+    message("Finish calculate ssGSEApy scores")
+    file.remove("./temp.h5Seurat")
+    file.remove("./temp.h5ad")
+    file.remove("./geneset.csv")
+    file.remove("./matrix.py.result.csv")
+    file.remove('./geneset.gmt')
+    rm(acts)
+    gc()
+
+
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
+
+
 
   #### 18.calculate AddModuleScore ####
   tryCatch({if (("AddModuleScore" %in% method) & (slot %in% c("data"))) {
@@ -1578,13 +1960,17 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = score,
                                          assay = "AddModuleScore")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["AddModuleScore"]]$counts <- NULL}
     message("Finish calculate AddModuleScore scores")
     rm(score)
     rm(object.AddModuleScore)
     gc()
 
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
 
 
 
@@ -1609,6 +1995,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                                          get.largevis=FALSE,
                                          make.geneknn=FALSE,
                                          get.tsne = F)
+
     h.gsets.list.pagoda2.env <- list2env(h.gsets.list.pagoda2)
     mytestPathwayOverdispersion=function(setenv, type='counts', max.pathway.size=1e3, min.pathway.size=10,
                                          n.randomizations=5, verbose=FALSE, n.cores=self$n.cores, score.alpha=0.05, plot=FALSE, cells=NULL, adjusted.pvalues=TRUE,
@@ -1841,6 +2228,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     }
 
     data.pagoda2$mytestPathwayOverdispersion <- mytestPathwayOverdispersion
+
     environment(data.pagoda2$mytestPathwayOverdispersion) <- data.pagoda2$.__enclos_env__
     data.pagoda2$mytestPathwayOverdispersion(h.gsets.list.pagoda2.env,
                                              verbose=T,
@@ -1862,13 +2250,118 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = score,
                                          assay = "pagoda2")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["pagoda2"]]$counts <- NULL}
     message("Finish calculate pagoda2 scores")
     rm(score)
     rm(data.pagoda2)
     gc()
 
 
-  }}, error = identity)
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
+
+
+  #### 20.calculate Sargent scores ####
+  tryCatch({if ("Sargent" %in% method) {
+
+
+    # install.package from Github
+    if (!requireNamespace("sargent", quietly = TRUE)) {
+      devtools::install_github("Sanofi-Public/PMCB-Sargent", force =T)
+    }
+
+
+    # create gene set for Sargent
+    h.gsets.list.Sargent <- list()
+    for (i in seq_along(h.gsets.list)) {
+
+      if (any(stringr::str_detect(h.gsets.list[[i]], pattern = "\\+$|-$"))){
+
+        if (is.null(geneset.weight)) {
+          weightData <- sapply(X = h.gsets.list[[i]],
+                               FUN = function(x){
+                                 if (stringr::str_detect(x, pattern = "\\+")==T){
+                                   x=1
+                                 }else if (stringr::str_detect(x, pattern = "-")==T){
+                                   x=-1
+                                 }else{
+                                   x=1
+                                 }}, simplify = TRUE)
+          h.gsets.list.Sargent[[i]] <- data.frame(source = names(h.gsets.list)[i],
+                                                  target = h.gsets.list[[i]],
+                                                  weight = weightData)
+        }else{
+          h.gsets.list.Sargent[[i]] <- data.frame(source = names(h.gsets.list)[i],
+                                                  target = h.gsets.list[[i]],
+                                                  weight = geneset.weight[h.gsets.list[[i]]],
+                                                  row.names = NULL)
+        }
+
+
+      }else{
+
+
+        if (is.null(geneset.weight)) {
+          h.gsets.list.Sargent[[i]] <- data.frame(source = names(h.gsets.list)[i],
+                                                  target = h.gsets.list[[i]],
+                                                  weight = 1)
+        }else{
+          h.gsets.list.Sargent[[i]] <- data.frame(source = names(h.gsets.list)[i],
+                                                  target = h.gsets.list[[i]],
+                                                  weight = geneset.weight[h.gsets.list[[i]]],
+                                                  row.names = NULL)
+        }
+
+      }
+
+
+    }
+
+    net <- do.call(rbind, h.gsets.list.Sargent)
+    source <- NULL
+    weight <- NULL
+    target <- NULL
+    net <- net %>%
+      dplyr::mutate(target = stringr::str_c(weight, "*", target, sep = "")) %>%
+      dplyr::select(c(source, target))
+    net$source <- as.factor(net$source)
+    net2 <- net %>% dplyr::group_split(source, .keep = F) %>%
+      purrr::map( ~.x %>% dplyr::pull(target)) %>%
+      purrr::set_names(levels(net$source))
+
+
+    message("Calculate Sargent scores")
+    # Run Sargent
+    acts <- sargent::sargentAnnotation(gex = my.matrix,
+                                       gene.sets = net2,
+                                       only.score = T)
+    acts <- acts@cells_score
+
+
+    object[["Sargent"]] <- SeuratObject::CreateAssayObject(counts = acts)
+    object <- SeuratObject::SetAssayData(object, slot = "scale.data",
+                                         new.data = acts,
+                                         assay = "Sargent")
+    if (utils::packageVersion("Seurat") >= "5.0.0") {
+      object[["Sargent"]]$counts <- NULL}
+    message("Finish calculate Sargent scores")
+
+    rm(acts)
+    gc()
+
+  }}, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
+
+  #### Finally check Seurat version  ####
+  tryCatch({if (Seurat.treated == T) {
+    object[[assay]] <- methods::as(object = object[[assay]], Class = "Assay5")
+    for (i in SeuratObject::Assays(object)[SeuratObject::Assays(object) %in% method]) {
+      object[[i]] <- methods::as(object = object[[i]], Class = "Assay5")
+    }}
+  }, error = identity)
 
 
 

@@ -84,7 +84,7 @@ irGSEA.densityheatmap <- function(object = NULL, method = NULL,
   # plot
   scores.densityheatmap <- Seurat::VlnPlot(object = object,
                                            assay = method,
-                                           slot = "scale.data",
+                                           slot = "data",
                                            group.by = group.by,
                                            features = custom.geneset,
                                            pt.size = 0,

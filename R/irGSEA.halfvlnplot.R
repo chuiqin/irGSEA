@@ -87,7 +87,7 @@ irGSEA.halfvlnplot <- function(object = NULL, method = NULL,
   # plot
   scores.vlnplot <- Seurat::VlnPlot(object = object,
                                     assay = method,
-                                    slot = "scale.data",
+                                    slot = "data",
                                     group.by = group.by,
                                     cols = color.cluster,
                                     features = custom.geneset,
