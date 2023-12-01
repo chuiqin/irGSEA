@@ -11,7 +11,13 @@ easy to visualize the results.
 
 For more details, please view
 [irGSEA](https://chuiqin.github.io/irGSEA/) And you can view [Chinese
-tutorial](https://www.jianshu.com/p/463dd6e2986f) \## Installation
+tutorial](https://www.jianshu.com/p/463dd6e2986f)
+
+## Graph Abstrast
+
+![Graph Abstrast](./man/figures/Abstrast.jpg)
+
+## Installation
 
 ``` r
 
@@ -25,7 +31,7 @@ cran.packages <- c("aplot", "BiocManager", "data.table", "devtools",
                    "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", 
                    "tidyselect", "tidytree", "VAM")
 
-for (i in seq_along(cran.packages)) {
+for (i in cran.packages) {
   if (!requireNamespace(i, quietly = TRUE)) {
     install.packages(i, ask = F, update = F)
   }
@@ -38,7 +44,7 @@ bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap",
                            "SummarizedExperiment", "UCell",
                            "viper","sparseMatrixStats")
 
-for (i in seq_along(bioconductor.packages)) {
+for (i in bioconductor.packages) {
   if (!requireNamespace(i, quietly = TRUE)) {
     install.packages(i, ask = F, update = F)
   }
@@ -118,7 +124,7 @@ for (i in seq_along(require.package)) {
 }
 ```
 
-Some users can accelerate by mirror
+## Some users can accelerate by mirror
 
 ``` r
 options(BioC_mirror="https://mirrors.tuna.tsinghua.edu.cn/bioconductor/")
@@ -134,7 +140,7 @@ cran.packages <- c("aplot", "BiocManager", "data.table", "devtools",
                    "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", 
                    "tidyselect", "tidytree", "VAM")
 
-for (i in seq_along(cran.packages)) {
+for (i in cran.packages) {
   if (!requireNamespace(i, quietly = TRUE)) {
     install.packages(i, ask = F, update = F)
   }
@@ -146,7 +152,7 @@ bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap",
                            "GSVA", "Nebulosa", "scde", "singscore",
                            "SummarizedExperiment", "UCell", "viper")
 
-for (i in seq_along(bioconductor.packages)) {
+for (i in bioconductor.packages) {
   if (!requireNamespace(i, quietly = TRUE)) {
     install.packages(i, ask = F, update = F)
   }
@@ -210,7 +216,9 @@ for (i in require.package) {
 }
 ```
 
-![All methods](./man/figures/figure3.png)
+## Available method
+
+![Available method](./man/figures/figure3.png)
 
 ## load example dataset
 
@@ -501,8 +509,10 @@ densityheatmap
 
 <img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
 
+## Work with clusterProfiler package
+
 ``` r
-#### work wit clusterProfiler package ####
+#### work with clusterProfiler package ####
 # load library
 library(clusterProfiler)
 library(tidyverse)
@@ -597,7 +607,11 @@ go.list <- go.list %>%
   purrr::map( ~.x %>% dplyr::pull(SYMBOL) %>% unique(.)) %>%
   purrr::set_names(levels(go.list$name))
 head(go.list)
+```
 
+## Work with newest Msigdb
+
+``` r
 #### work with newest Msigdb ####
 
 # https://data.broadinstitute.org/gsea-msigdb/msigdb/release/
