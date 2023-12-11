@@ -46,7 +46,7 @@ bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap",
 
 for (i in bioconductor.packages) {
   if (!requireNamespace(i, quietly = TRUE)) {
-    install.packages(i, ask = F, update = F)
+    BiocManager::install(i, ask = F, update = F)
   }
 }
 
@@ -154,7 +154,7 @@ bioconductor.packages <- c("AUCell", "BiocParallel", "ComplexHeatmap",
 
 for (i in bioconductor.packages) {
   if (!requireNamespace(i, quietly = TRUE)) {
-    install.packages(i, ask = F, update = F)
+    BiocManager::install(i, ask = F, update = F)
   }
 }
 

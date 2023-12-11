@@ -338,11 +338,11 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
   if(msigdb == T & custom == F){
 
-    if ( utils::available.packages()["msigdbr", "Version"] > utils::packageVersion("msigdbr")) {
-      message("There is a newer version of the msigdbr package. Watch out for updates!")
-      message("You can update the msigdbr package via `install.packages(`msigdbr`)`.")
-      message(paste0("Your current version of the msigdbr package: ", utils::packageVersion("msigdbr")))
-    }
+    # if ( utils::available.packages()["msigdbr", "Version"] > utils::packageVersion("msigdbr")) {
+    #   message("There is a newer version of the msigdbr package. Watch out for updates!")
+    #   message("You can update the msigdbr package via `install.packages(`msigdbr`)`.")
+    #   message(paste0("Your current version of the msigdbr package: ", utils::packageVersion("msigdbr")))
+    # }
 
     h.human <- msigdbr::msigdbr(species = species, category = category, subcategory = subcategory)
     colnames(h.human) <- stringr::str_replace(colnames(h.human), "gene_symbol","symbol")
