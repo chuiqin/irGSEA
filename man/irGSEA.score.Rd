@@ -22,6 +22,8 @@ irGSEA.score(
   geneid = "symbol",
   minGSSize = 1,
   maxGSSize = 500,
+  chunk = F,
+  chunk.size = 5000,
   method = c("AUCell", "UCell", "singscore", "ssgsea"),
   aucell.MaxRank = NULL,
   ucell.MaxRank = NULL,
@@ -83,6 +85,15 @@ parameter works if msigdb is True.}
 \item{minGSSize}{Minimum number of genes in one gene set.}
 
 \item{maxGSSize}{Maximal number of genes in one gene set.}
+
+\item{chunk}{Divide the matrix according to chunks before
+scoring. The parameter works for AUCell, UCell, singscore, ssgsea,
+JASMINEh and viper. Default False. If the number of cells is
+greater than 50000, the parameter works.}
+
+\item{chunk.size}{Number of cells to be processed simultaneously
+(lower size requires slightly more computation but reduces memory
+demands). Default 5000.}
 
 \item{method}{A vector. Default  c("AUCell", "UCell", "singscore", "ssgsea", "JASMINE", "viper").
               `AUCell (https://doi.org/10.1038/nmeth.4463)`:
