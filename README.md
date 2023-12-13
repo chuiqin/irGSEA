@@ -10,8 +10,9 @@ Integrate all single cell rank-based gene set enrichment analysis and
 easy to visualize the results.
 
 For more details, please view
-[irGSEA](https://chuiqin.github.io/irGSEA/) And you can view [Chinese
-tutorial](https://www.jianshu.com/p/463dd6e2986f)
+[irGSEA](https://chuiqin.github.io/irGSEA/) And you can view: [Chinese
+tutorial_1](https://www.jianshu.com/p/463dd6e2986f) [Chinese
+tutorial_2](https://www.jianshu.com/p/66c365352613)
 
 ## Graph Abstrast
 
