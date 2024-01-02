@@ -450,9 +450,10 @@ densityheatmap
 calculate the hub gene of the geneset based on the correlation between the 
 geneset's score and the expression or rank of gene included in the geneset
 
-```{r fig.height=8, fig.width=15}
+```{r fig.height=8, fig.width=18}
 hub.result <- irGSEA.hub(object = pbmc3k.final, assay = "RNA", slot = "data",
-                         method = c("AUCell","UCell","singscore", "ssgsea"),
+                         method = c("AUCell","UCell","singscore", "ssgsea",
+                                     "JASMINE", "viper"),
                          show.geneset = c("HALLMARK-INFLAMMATORY-RESPONSE",
                                           "HALLMARK-APOPTOSIS"),
                          ncores = 4, type = "rank", maxRank = 2000, top = 5,

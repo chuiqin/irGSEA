@@ -88,7 +88,9 @@ irGSEA.hub <- function(object = NULL, assay = "RNA", slot = "data",
 
         # the target gene of geneset
         if (class(object[[i]])[1] == "Assay5") {
-          gene <- object[[i]]@meta.data[x, "target.gene"]
+          gene <- object[[i]]@meta.data
+          rownames(gene) <- rownames(object[[i]])
+          gene <- gene[x, "target.gene"]
         }else{
           gene <- object[[i]]@meta.features[x, "target.gene"]
         }

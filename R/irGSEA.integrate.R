@@ -118,10 +118,12 @@ irGSEA.integrate <- function(object = NULL, group.by = NULL,
       if (class(object[[method[i]]])[1] == "Assay5") {
         deg.geneset[[method[i]]] <- deg.geneset[[method[i]]] %>%
           dplyr::mutate(target.gene = plyr::mapvalues(gene,
-                                                      from = rownames(object[[method[i]]]@meta.data),
+                                                      from = rownames(object[[method[i]]]),
                                                       to = object[[method[i]]]@meta.data$target.gene))
+        target.gene <- NULL
         target.gene.geneset[[i]] <- object[[method[i]]]@meta.data %>%
-          tibble::rownames_to_column(var = "geneset")
+          dplyr::mutate(geneset = rownames(object[[method[i]]])) %>%
+          dplyr::relocate(geneset, .before = target.gene)
       }else{
         deg.geneset[[method[i]]] <- deg.geneset[[method[i]]] %>%
           dplyr::mutate(target.gene = plyr::mapvalues(gene,

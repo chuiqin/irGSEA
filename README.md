@@ -524,7 +524,8 @@ geneset
 
 ``` r
 hub.result <- irGSEA.hub(object = pbmc3k.final, assay = "RNA", slot = "data",
-                         method = c("AUCell","UCell","singscore", "ssgsea"),
+                         method = c("AUCell","UCell","singscore", "ssgsea",
+                                     "JASMINE", "viper"),
                          show.geneset = c("HALLMARK-INFLAMMATORY-RESPONSE",
                                           "HALLMARK-APOPTOSIS"),
                          ncores = 4, type = "rank", maxRank = 2000, top = 5,
@@ -540,6 +541,12 @@ hub.result <- irGSEA.hub(object = pbmc3k.final, assay = "RNA", slot = "data",
 #> HALLMARK-INFLAMMATORY-RESPONSE
 #> HALLMARK-APOPTOSIS
 #> ssgsea
+#> HALLMARK-INFLAMMATORY-RESPONSE
+#> HALLMARK-APOPTOSIS
+#> JASMINE
+#> HALLMARK-INFLAMMATORY-RESPONSE
+#> HALLMARK-APOPTOSIS
+#> viper
 #> HALLMARK-INFLAMMATORY-RESPONSE
 #> HALLMARK-APOPTOSIS
 #> Warning: Unknown or uninitialised column: `text`.
