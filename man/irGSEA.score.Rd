@@ -24,6 +24,8 @@ irGSEA.score(
   maxGSSize = 500,
   chunk = F,
   chunk.size = 5000,
+  add = F,
+  overwrite = T,
   method = c("AUCell", "UCell", "singscore", "ssgsea"),
   aucell.MaxRank = NULL,
   ucell.MaxRank = NULL,
@@ -94,6 +96,15 @@ greater than 50000, the parameter works.}
 \item{chunk.size}{Number of cells to be processed simultaneously
 (lower size requires slightly more computation but reduces memory
 demands). Default 5000.}
+
+\item{add}{Whether to add the new gene set scoring matrix based on the
+original gene set scoring matrix. Default False.}
+
+\item{overwrite}{Default True. The parameter works while the add is true.
+The same geneset name exists in two gene scoring matrices, the newly added
+geneset will overwrite the previous geneset if the overwrite is true. The newly
+added geneset will be forcibly renamed as "geneset's name + serial number" if
+the overwrite is false.}
 
 \item{method}{A vector. Default  c("AUCell", "UCell", "singscore", "ssgsea", "JASMINE", "viper").
               `AUCell (https://doi.org/10.1038/nmeth.4463)`:

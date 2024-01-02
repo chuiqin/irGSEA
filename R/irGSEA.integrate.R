@@ -86,6 +86,7 @@ irGSEA.integrate <- function(object = NULL, group.by = NULL,
 
   # calculate
   deg.geneset <- list()
+  target.gene.geneset <- list()
   avg_diff <- NULL
   unloadNamespace("VISION")
   for (i in seq_along(method)) {
@@ -110,6 +111,28 @@ irGSEA.integrate <- function(object = NULL, group.by = NULL,
       })
       marker.geneset <- do.call(rbind, marker.geneset)
       deg.geneset[[method[i]]] <- cbind(marker.geneset, methods = method[i])
+
+      # the target gene of gene set
+      gene <- NULL
+      geneset <- NULL
+      if (class(object[[method[i]]])[1] == "Assay5") {
+        deg.geneset[[method[i]]] <- deg.geneset[[method[i]]] %>%
+          dplyr::mutate(target.gene = plyr::mapvalues(gene,
+                                                      from = rownames(object[[method[i]]]@meta.data),
+                                                      to = object[[method[i]]]@meta.data$target.gene))
+        target.gene.geneset[[i]] <- object[[method[i]]]@meta.data %>%
+          tibble::rownames_to_column(var = "geneset")
+      }else{
+        deg.geneset[[method[i]]] <- deg.geneset[[method[i]]] %>%
+          dplyr::mutate(target.gene = plyr::mapvalues(gene,
+                                                      from = rownames(object[[method[i]]]@meta.features),
+                                                      to = object[[method[i]]]@meta.features$target.gene))
+        target.gene.geneset[[i]] <- object[[method[i]]]@meta.features %>%
+          tibble::rownames_to_column(var = "geneset")
+      }
+
+      message("Finish!")
+
     }, error = identity)
     if (methods::is(result.wilcox, "error")) {next}
 
@@ -117,6 +140,10 @@ irGSEA.integrate <- function(object = NULL, group.by = NULL,
 
   deg.geneset.list <- deg.geneset %>% purrr::map( ~.x %>% dplyr::rename(Name = gene))
   deg.geneset <- do.call(rbind, deg.geneset)
+
+  target.gene.geneset <- do.call(rbind, target.gene.geneset)
+  target.gene.geneset <- target.gene.geneset %>%
+    dplyr::distinct(geneset, .keep_all = T)
 
   #### RRA  ####
   p_val_adj <- NULL
@@ -188,7 +215,12 @@ irGSEA.integrate <- function(object = NULL, group.by = NULL,
     dplyr::select(c("Name", "value","cluster","direction")) %>%
     dplyr::rename(pvalue = value) %>%
     dplyr::mutate(method = "RRA")
+
   deg.geneset.list[["RRA"]] <- sig.genesets
+  deg.geneset.list[["RRA"]] <- deg.geneset.list[["RRA"]] %>%
+    dplyr::mutate(target.gene = plyr::mapvalues(Name,
+                                                from = target.gene.geneset$geneset,
+                                                to = target.gene.geneset$target.gene))
 
   return(deg.geneset.list)
 

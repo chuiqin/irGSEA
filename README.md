@@ -23,10 +23,10 @@ tutorial_2](https://www.jianshu.com/p/66c365352613)
 ``` r
 
 # install packages from CRAN
-cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", 
-                   "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
+cran.packages <- c("aplot", "BiocManager", "circlize", "cowplot","data.table", 
+                   "devtools", "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
                    "ggplot2", "ggplotify", "ggridges", "ggsci", "irlba",
-                   "magrittr", "Matrix", "msigdbr", "pagoda2", "pointr", 
+                   "magrittr", "Matrix", "msigdbr", "pagoda2", "plyr", "pointr", 
                    "purrr", "RcppML", "readr", "reshape2", "reticulate", 
                    "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
                    "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", 
@@ -132,10 +132,10 @@ options(BioC_mirror="https://mirrors.tuna.tsinghua.edu.cn/bioconductor/")
 options("repos" = c(CRAN="http://mirrors.cloud.tencent.com/CRAN/"))
 
 # install packages from CRAN
-cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", 
-                   "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
+cran.packages <- c("aplot", "BiocManager", "circlize", "cowplot", "data.table",
+                   "devtools", "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
                    "ggplot2", "ggplotify", "ggridges", "ggsci", "irlba",
-                   "magrittr", "Matrix", "msigdbr", "pagoda2", "pointr", 
+                   "magrittr", "Matrix", "msigdbr", "pagoda2", "plyr", "pointr", 
                    "purrr", "RcppML", "readr", "reshape2", "reticulate", 
                    "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
                    "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", 
@@ -360,11 +360,17 @@ result.dge <- irGSEA.integrate(object = pbmc3k.final,
                                method = c("AUCell","UCell","singscore",
                                           "ssgsea", "JASMINE", "viper"))
 #> Calculate differential gene set : AUCell
+#> Finish!
 #> Calculate differential gene set : UCell
+#> Finish!
 #> Calculate differential gene set : singscore
+#> Finish!
 #> Calculate differential gene set : ssgsea
+#> Finish!
 #> Calculate differential gene set : JASMINE
+#> Finish!
 #> Calculate differential gene set : viper
+#> Finish!
 class(result.dge)
 #> [1] "list"
 ```
@@ -510,6 +516,54 @@ densityheatmap
 
 <img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
 
+### Calculate the hub gene of the geneset
+
+calculate the hub gene of the geneset based on the correlation between
+the geneset’s score and the expression or rank of gene included in the
+geneset
+
+``` r
+hub.result <- irGSEA.hub(object = pbmc3k.final, assay = "RNA", slot = "data",
+                         method = c("AUCell","UCell","singscore", "ssgsea"),
+                         show.geneset = c("HALLMARK-INFLAMMATORY-RESPONSE",
+                                          "HALLMARK-APOPTOSIS"),
+                         ncores = 4, type = "rank", maxRank = 2000, top = 5,
+                         correlation.color = c("#0073c2","white","#efc000"),
+                         method.color = NULL)
+#> AUCell
+#> HALLMARK-INFLAMMATORY-RESPONSE
+#> HALLMARK-APOPTOSIS
+#> UCell
+#> HALLMARK-INFLAMMATORY-RESPONSE
+#> HALLMARK-APOPTOSIS
+#> singscore
+#> HALLMARK-INFLAMMATORY-RESPONSE
+#> HALLMARK-APOPTOSIS
+#> ssgsea
+#> HALLMARK-INFLAMMATORY-RESPONSE
+#> HALLMARK-APOPTOSIS
+#> Warning: Unknown or uninitialised column: `text`.
+#> Unknown or uninitialised column: `text`.
+
+head(hub.result$hub_result)
+#>      method                        geneset    gene   correlation      p.value
+#> cor  AUCell HALLMARK-INFLAMMATORY-RESPONSE   ABCA1 -0.0108152883 5.787291e-01
+#> cor1 AUCell HALLMARK-INFLAMMATORY-RESPONSE    ABI1  0.0790188630 4.845537e-05
+#> cor2 AUCell HALLMARK-INFLAMMATORY-RESPONSE  ACVR1B  0.0533361541 6.142516e-03
+#> cor3 AUCell HALLMARK-INFLAMMATORY-RESPONSE  ACVR2A -0.0071294398 7.143579e-01
+#> cor4 AUCell HALLMARK-INFLAMMATORY-RESPONSE     ADM  0.0790702481 4.790793e-05
+#> cor5 AUCell HALLMARK-INFLAMMATORY-RESPONSE ADORA2B  0.0005949537 9.756338e-01
+hub.result$hub_plot$`HALLMARK-APOPTOSIS`
+```
+
+<img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
+
+``` r
+hub.result$hub_plot$`HALLMARK-INFLAMMATORY-RESPONSE`
+```
+
+<img src="man/figures/README-unnamed-chunk-19-2.png" width="100%" />
+
 ## Work with clusterProfiler package
 
 ``` r
@@ -524,7 +578,7 @@ kk <- clusterProfiler::gson_KEGG(species = "hsa")
 gson::write.gson(kk, file = "./KEGG_20231128.gson")
 
 # read gson file
-kk2 <- gson::read.gson("./KEGG_20231123.gson")
+kk2 <- gson::read.gson("./KEGG_20231128.gson")
 # Convert to a data frame
 kegg.list <- dplyr::left_join(kk2@gsid2name,
                               kk2@gsid2gene,

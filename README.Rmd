@@ -37,10 +37,10 @@ And you can view:
 ```{r, eval = FALSE}
 
 # install packages from CRAN
-cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", 
-                   "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
+cran.packages <- c("aplot", "BiocManager", "circlize", "cowplot","data.table", 
+                   "devtools", "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
                    "ggplot2", "ggplotify", "ggridges", "ggsci", "irlba",
-                   "magrittr", "Matrix", "msigdbr", "pagoda2", "pointr", 
+                   "magrittr", "Matrix", "msigdbr", "pagoda2", "plyr", "pointr", 
                    "purrr", "RcppML", "readr", "reshape2", "reticulate", 
                    "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
                    "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", 
@@ -147,10 +147,10 @@ options(BioC_mirror="https://mirrors.tuna.tsinghua.edu.cn/bioconductor/")
 options("repos" = c(CRAN="http://mirrors.cloud.tencent.com/CRAN/"))
 
 # install packages from CRAN
-cran.packages <- c("aplot", "BiocManager", "data.table", "devtools", 
-                   "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
+cran.packages <- c("aplot", "BiocManager", "circlize", "cowplot", "data.table",
+                   "devtools", "doParallel", "doRNG", "dplyr", "ggfun", "gghalves", 
                    "ggplot2", "ggplotify", "ggridges", "ggsci", "irlba",
-                   "magrittr", "Matrix", "msigdbr", "pagoda2", "pointr", 
+                   "magrittr", "Matrix", "msigdbr", "pagoda2", "plyr", "pointr", 
                    "purrr", "RcppML", "readr", "reshape2", "reticulate", 
                    "rlang", "RMTstat", "RobustRankAggreg", "roxygen2", 
                    "Seurat", "SeuratObject", "stringr", "tibble", "tidyr", 
@@ -445,6 +445,24 @@ densityheatmap <- irGSEA.densityheatmap(object = pbmc3k.final,
 densityheatmap
 ```
 
+### Calculate the hub gene of the geneset
+
+calculate the hub gene of the geneset based on the correlation between the 
+geneset's score and the expression or rank of gene included in the geneset
+
+```{r fig.height=8, fig.width=15}
+hub.result <- irGSEA.hub(object = pbmc3k.final, assay = "RNA", slot = "data",
+                         method = c("AUCell","UCell","singscore", "ssgsea"),
+                         show.geneset = c("HALLMARK-INFLAMMATORY-RESPONSE",
+                                          "HALLMARK-APOPTOSIS"),
+                         ncores = 4, type = "rank", maxRank = 2000, top = 5,
+                         correlation.color = c("#0073c2","white","#efc000"),
+                         method.color = NULL)
+
+head(hub.result$hub_result)
+hub.result$hub_plot$`HALLMARK-APOPTOSIS`
+hub.result$hub_plot$`HALLMARK-INFLAMMATORY-RESPONSE`
+```
 
 ## Work with clusterProfiler package
 
@@ -460,7 +478,7 @@ kk <- clusterProfiler::gson_KEGG(species = "hsa")
 gson::write.gson(kk, file = "./KEGG_20231128.gson")
 
 # read gson file
-kk2 <- gson::read.gson("./KEGG_20231123.gson")
+kk2 <- gson::read.gson("./KEGG_20231128.gson")
 # Convert to a data frame
 kegg.list <- dplyr::left_join(kk2@gsid2name,
                               kk2@gsid2gene,

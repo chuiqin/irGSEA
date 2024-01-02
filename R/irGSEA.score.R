@@ -45,6 +45,13 @@
 #' @param chunk.size Number of cells to be processed simultaneously
 #' (lower size requires slightly more computation but reduces memory
 #' demands). Default 5000.
+#' @param add Whether to add the new gene set scoring matrix based on the
+#' original gene set scoring matrix. Default False.
+#' @param overwrite Default True. The parameter works while the add is true.
+#' The same geneset name exists in two gene scoring matrices, the newly added
+#' geneset will overwrite the previous geneset if the overwrite is true. The newly
+#' added geneset will be forcibly renamed as "geneset's name + serial number" if
+#' the overwrite is false.
 #' @param method A vector. Default  c("AUCell", "UCell", "singscore", "ssgsea", "JASMINE", "viper").
 #'               `AUCell (https://doi.org/10.1038/nmeth.4463)`:
 #'               AUCell uses the area-under-the-curve (AUC)  to calculate whether
@@ -276,7 +283,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                          msigdb = T, species = "Homo sapiens",
                          category = "H", subcategory = NULL,
                          geneid = "symbol", minGSSize = 1, maxGSSize = 500,
-                         chunk = F, chunk.size = 5000,
+                         chunk = F, chunk.size = 5000, add = F, overwrite = T,
                          method = c("AUCell", "UCell", "singscore", "ssgsea"),
                          aucell.MaxRank = NULL, ucell.MaxRank = NULL,
                          kcdf = 'Gaussian', JASMINE.method = "oddsratio",
@@ -339,6 +346,11 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
   # continue v3
   if (utils::packageVersion("Seurat") >= "5.0.0") {
     options(Seurat.object.assay.version = "v3")
+  }
+
+  # create the backup of object
+  if (add) {
+    object.bak <- object
   }
 
 
@@ -692,40 +704,6 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
           return(singscore.set)
         })
 
-
-
-      # # old version
-      # for (i in seq_along(h.gsets.list)){
-      #   if (any(stringr::str_detect(h.gsets.list[[i]], pattern = "\\+$|-$"))) {
-      #     h.gsets.list.positive <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)\\+")[,2] %>% purrr::discard(is.na)
-      #     h.gsets.list.negative <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)-")[,2] %>% purrr::discard(is.na)
-      #     if (length(h.gsets.list.positive)==0) {
-      #       singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-      #                                                       upSet = h.gsets.list.negative,
-      #                                                       centerScore = F)
-      #     }
-      #     if (length(h.gsets.list.negative)==0) {
-      #       singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-      #                                                       upSet = h.gsets.list.positive,
-      #                                                       centerScore = F)
-      #     }
-      #     if ((length(h.gsets.list.positive)!=0)&(length(h.gsets.list.negative)!=0)) {
-      #       singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-      #                                                       upSet = h.gsets.list.positive,
-      #                                                       downSet = h.gsets.list.negative,
-      #                                                       centerScore = F)
-      #     }
-      #
-      #   }else{
-      #     singscore.scores[[i]] <- singscore::simpleScore(singscore.rank,
-      #                                                     upSet = h.gsets.list[[i]],
-      #                                                     centerScore = F)
-      #   }
-      #   TotalScore <- NULL
-      #   singscore.scores[[i]] <- singscore.scores[[i]] %>%
-      #     dplyr::select(TotalScore) %>%
-      #     magrittr::set_colnames(names(h.gsets.list)[i])
-      # }
 
       names(singscore.scores) <- names(h.gsets.list)
       singscore.scores <- do.call(cbind, singscore.scores)
@@ -2408,6 +2386,94 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
   }}, error = function(e) {
     cat("Error: ", conditionMessage(e), "\n")
   })
+
+
+  #### Add the target gene for geneset  ####
+  tryCatch({if (T) {
+    h.gsets.list3 <- h.gsets.list %>%
+      purrr::map(~.x %>% stringr::str_c(collapse = ", ") %>% tibble::tibble(target.gene = .)) %>%
+      dplyr::bind_rows(.id = "geneset") %>%
+      tibble::column_to_rownames(var = "geneset")
+    rownames(h.gsets.list3) <- stringr::str_replace_all(rownames(h.gsets.list3), pattern = "_", replacement = "-")
+    for (i in SeuratObject::Assays(object)[SeuratObject::Assays(object) %in% method]) {
+      h.gsets.list4 <- h.gsets.list3[rownames(object[[i]]@meta.features), , drop = F]
+      object[[i]]@meta.features <- h.gsets.list4
+    }}
+  }, error = identity)
+
+  # Add a new gene set scoring matrix based on the original gene set scoring matrix
+
+  tryCatch({
+    if (add) {
+      message("Add the new geneset scoring matrix based on the original geneset scoring matrix")
+      for (i in SeuratObject::Assays(object.bak)[SeuratObject::Assays(object.bak) %in% method]) {
+        print(i)
+        object.data <- SeuratObject::GetAssayData(object = object[[i]], slot = "scale.data")
+        object.bak.data <- SeuratObject::GetAssayData(object = object.bak[[i]], slot = "scale.data")
+        name.intersect <- intersect(rownames(object.data), rownames(object.bak.data))
+
+        # if overwrite, or renames the same geneset
+        if (overwrite) {
+          index.intersect <- !rownames(object.bak.data) %in% name.intersect
+          object.data.merge <- rbind(object.bak.data[index.intersect,], object.data)
+          object.data.merge <- as.data.frame(object.data.merge)
+
+        }else{
+          index.intersect <- match(name.intersect, rownames(object.data))
+          rownames(object.data)[index.intersect] <- paste0(rownames(object.data)[index.intersect], "-1")
+
+          object.data.merge <- rbind(object.bak.data, object.data)
+          object.data.merge <- as.data.frame(object.data.merge)
+
+        }
+
+        # meta.features
+        if (purrr::is_empty(object.bak[[i]]@meta.features)) {
+          object.bak.meta.features <- data.frame(geneset = rownames(object.bak[[i]]),
+                                                 target.gene = "")
+        }else{
+          object.bak.meta.features <- object.bak[[i]]@meta.features %>%
+            tibble::rownames_to_column(var = "geneset")
+        }
+
+        if (overwrite) {
+          object.bak.meta.features <- object.bak.meta.features[index.intersect,]
+          object.meta.features <- object[[i]]@meta.features %>%
+            tibble::rownames_to_column(var = "geneset")
+          object.merge.meta.features <- rbind(object.bak.meta.features, object.meta.features)
+          object.merge.meta.features <- as.data.frame(object.merge.meta.features) %>%
+            tibble::column_to_rownames(var = "geneset")
+        }else{
+          object.meta.features <- data.frame(geneset = rownames(object.data.merge)[!rownames(object.data.merge) %in% rownames(object.bak[[i]])],
+                                             target.gene = object[[i]]@meta.features$target.gene)
+          object.merge.meta.features <- rbind(object.bak.meta.features, object.meta.features)
+          object.merge.meta.features <- as.data.frame(object.merge.meta.features) %>%
+            tibble::column_to_rownames(var = "geneset")
+        }
+
+
+
+
+        object[[i]] <- SeuratObject::CreateAssayObject(counts = as.matrix(object.data.merge))
+        object <- SeuratObject::SetAssayData(object, slot = "scale.data",
+                                             new.data = as.matrix(object.data.merge),
+                                             assay = i)
+        if (utils::packageVersion("Seurat") >= "5.0.0") {
+          object[[i]]$counts <- NULL}
+
+        object[[i]]@meta.features <- object.merge.meta.features
+      }
+      message("Finish!")
+      rm(object.bak)
+      rm(object.data)
+      rm(object.bak.data)
+      rm(object.data.merge)
+      gc()
+    }
+  }, error = function(e) {
+    cat("Error: ", conditionMessage(e), "\n")
+  })
+
 
   #### Finally check Seurat version  ####
   tryCatch({if (Seurat.treated == T) {
