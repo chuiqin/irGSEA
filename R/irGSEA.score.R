@@ -52,6 +52,7 @@
 #' geneset will overwrite the previous geneset if the overwrite is true. The newly
 #' added geneset will be forcibly renamed as "geneset's name + serial number" if
 #' the overwrite is false.
+#' @param suppressWarning Default true.
 #' @param method A vector. Default  c("AUCell", "UCell", "singscore", "ssgsea", "JASMINE", "viper").
 #'               `AUCell (https://doi.org/10.1038/nmeth.4463)`:
 #'               AUCell uses the area-under-the-curve (AUC)  to calculate whether
@@ -284,6 +285,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                          category = "H", subcategory = NULL,
                          geneid = "symbol", minGSSize = 1, maxGSSize = 500,
                          chunk = F, chunk.size = 5000, add = F, overwrite = T,
+                         suppressWarning = T,
                          method = c("AUCell", "UCell", "singscore", "ssgsea"),
                          aucell.MaxRank = NULL, ucell.MaxRank = NULL,
                          kcdf = 'Gaussian', JASMINE.method = "oddsratio",
@@ -292,6 +294,10 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
   #### Set random seeds
   set.seed(seeds)
+
+  if (suppressWarning) {
+    options(warn = -1)
+  }
 
 
 
@@ -480,12 +486,20 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
   # split the matrix if the matrix is too large
   if (ncol(my.matrix) >= 50000 | chunk) {
+
     if (is.null(chunk.size)) {
       chunk.size <- 5000
     }
-    cut.times <- ceiling(ncol(my.matrix)/chunk.size)
-    my.matrix.list <- split(seq_along(colnames(my.matrix)),
-                            cut(seq_along(colnames(my.matrix)), cut.times))
+
+    if (chunk & ncol(my.matrix) <= chunk.size) {
+      my.matrix.list <- list()
+      my.matrix.list[[1]] <- seq_along(colnames(my.matrix))
+    }else{
+      cut.times <- ceiling(ncol(my.matrix)/chunk.size)
+      my.matrix.list <- split(seq_along(colnames(my.matrix)),
+                              cut(seq_along(colnames(my.matrix)), cut.times))
+    }
+
   }else{
     my.matrix.list <- list()
     my.matrix.list[[1]] <- seq_along(colnames(my.matrix))
@@ -2483,7 +2497,9 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     }}
   }, error = identity)
 
-
+  if (suppressWarning) {
+    options(warn = 0)
+  }
 
   return(object)
 

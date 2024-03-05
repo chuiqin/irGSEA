@@ -26,6 +26,7 @@ irGSEA.score(
   chunk.size = 5000,
   add = F,
   overwrite = T,
+  suppressWarning = T,
   method = c("AUCell", "UCell", "singscore", "ssgsea"),
   aucell.MaxRank = NULL,
   ucell.MaxRank = NULL,
@@ -105,6 +106,8 @@ The same geneset name exists in two gene scoring matrices, the newly added
 geneset will overwrite the previous geneset if the overwrite is true. The newly
 added geneset will be forcibly renamed as "geneset's name + serial number" if
 the overwrite is false.}
+
+\item{suppressWarning}{Default true.}
 
 \item{method}{A vector. Default  c("AUCell", "UCell", "singscore", "ssgsea", "JASMINE", "viper").
               `AUCell (https://doi.org/10.1038/nmeth.4463)`:

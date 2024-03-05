@@ -14,11 +14,14 @@ For more details, please view
 tutorial_1](https://www.jianshu.com/p/463dd6e2986f) [Chinese
 tutorial_2](https://www.jianshu.com/p/66c365352613)
 
-## Graph Abstrast
+# 0.Graph Abstrast
 
-![Graph Abstrast](./man/figures/Abstrast.jpg)
+<figure>
+<img src="./man/figures/Abstrast.jpg" alt="Graph Abstrast" />
+<figcaption aria-hidden="true">Graph Abstrast</figcaption>
+</figure>
 
-## Installation
+# 1.Installation
 
 ``` r
 
@@ -125,7 +128,7 @@ for (i in seq_along(require.package)) {
 }
 ```
 
-## Some users can accelerate by mirror
+Some users can accelerate by mirror
 
 ``` r
 options(BioC_mirror="https://mirrors.tuna.tsinghua.edu.cn/bioconductor/")
@@ -217,13 +220,102 @@ for (i in require.package) {
 }
 ```
 
-## Available method
+# 2.Available method
 
-![Available method](./man/figures/figure3.png)
+The time and peak memory consumption associated with 50 Hallmark gene
+sets across 19 scoring methods for datasets of varying sizes.To address
+memory peak issues for datasets exceeding 50,000 cells, we implemented a
+strategy of partitioning them into processing units of 5,000 cells each
+for scoring. While this strategy mitigates memory peak issues, it
+extends the processing time.
 
-## load example dataset
+![Available method](./man/figures/figure3.png) The time and peak memory
+consumption associated with 50 Hallmark gene sets across irGSEA (AUCell,
+UCell, singscore, ssgsea, JASMINE and viper) for datasets of varying
+sizes while the parameter chunk works. ![Available
+method](./man/figures/figure4.png)
 
-load PBMC dataset by R package SeuratData
+# 3.Example dataset
+
+## pre-processing workflow
+
+Start from the 10X output file and organize it into the format required
+by the irGSEA package
+
+``` r
+# load library
+library(dplyr)
+library(Seurat)
+# download the pbmc3k.final dataset
+# the dataset is the output of the Cell Ranger pipeline from 10X
+# decompress the file to the specified directory
+download.file("https://cf.10xgenomics.com/samples/cell/pbmc3k.final3k/pbmc3k.final3k_filtered_gene_bc_matrices.tar.gz",
+              destfile = "./pbmc3k.final3k_filtered_gene_bc_matrices.tar.gz")
+untar("./pbmc3k.final3k_filtered_gene_bc_matrices.tar.gz", exdir = "./")
+
+# Load the pbmc3k.final dataset
+# Initialize the Seurat object with the raw (non-normalized data)
+# filter genes expressed by less than 10 cells 
+pbmc3k.final <- Read10X(data.dir = "./filtered_gene_bc_matrices/hg19/")
+options(Seurat.object.assay.version = "v3")
+pbmc3k.final <- CreateSeuratObject(counts = pbmc3k.final, 
+                           min.cells = 3, min.features = 200)
+pbmc3k.final
+
+# filter cells that have unique feature counts over 2500 or less than 200
+# filter cells that have >5% mitochondrial counts
+# filter cells that have >10% hemoglobin related counts
+# Specific filtration criteria need to be adjusted according to cell type
+pbmc3k.final[["percent.mt"]] <- PercentageFeatureSet(pbmc3k.final, pattern = "^MT-")
+# pbmc3k.final[["percent.ribo"]] <- PercentageFeatureSet(pbmc3k.final, pattern = "^RP[L|S]")
+HB.genes_total <- c("HBA1","HBA2","HBB","HBD","HBE1","HBG1","HBG2","HBM","HBQ1","HBZ")
+HB_m <- match(HB.genes_total,rownames(pbmc3k.final))
+HB.genes <- rownames(pbmc3k.final@assays$RNA)[HB_m]
+HB.genes <- HB.genes[!is.na(HB.genes)]
+pbmc3k.final[["percent.HB"]] <- PercentageFeatureSet(pbmc3k.final, features=HB.genes)
+pbmc3k.final <- subset(pbmc3k.final, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5 & percent.HB < 10)
+
+
+#### dimensional reduction, cluster and annotate 
+pbmc3k.final <- NormalizeData(pbmc3k.final)
+pbmc3k.final <- FindVariableFeatures(pbmc3k.final)
+pbmc3k.final <- ScaleData(pbmc3k.final)
+pbmc3k.final <- RunPCA(pbmc3k.final, features = VariableFeatures(object = pbmc3k.final))
+pbmc3k.final <- FindNeighbors(pbmc3k.final, dims = 1:10)
+pbmc3k.final <- FindClusters(pbmc3k.final, resolution = 0.5)
+pbmc3k.final <- RunUMAP(pbmc3k.final, dims = 1:10)
+DimPlot(pbmc3k.final, reduction = "umap")
+
+new.cluster.ids <- c("Naive CD4 T", "CD14+ Mono", "Memory CD4 T", "B", "CD8 T", "FCGR3A+ Mono",
+                     "NK", "DC", "Platelet")
+names(new.cluster.ids) <- levels(pbmc3k.final)
+pbmc3k.final <- RenameIdents(pbmc3k.final, new.cluster.ids)
+DimPlot(pbmc3k.final, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend()
+
+# filter doublets(optional)
+# devtools::install_github('chris-mcginnis-ucsf/DoubletFinder')
+library(DoubletFinder)
+sweep.res.list <- paramSweep(pbmc3k.final, PCs = 1:10, sct = FALSE)
+sweep.stats <- summarizeSweep(sweep.res.list, GT = FALSE)
+bcmvn <- find.pK(sweep.stats)
+mpK <- as.numeric(as.vector(bcmvn$pK[which.max(bcmvn$BCmetric)]))
+homotypic.prop <- modelHomotypic(pbmc3k.final$RNA_snn_res.0.5)
+# estimation of 10X doublet rate:
+# https://assets.ctfassets.net/an68im79xiti/1eX2FPdpeCgnCJtw4fj9Hx/7cb84edaa9eca04b607f9193162994de/CG000204_ChromiumNextGEMSingleCell3_v3.1_Rev_D.pdf
+expected_doublet_rate <- cut(ncol(pbmc3k.final), 
+                             breaks = c(0, 500, 1000, 2000, 3000, 4000, 5000,
+                                        6000, 7000, 8000, 9000, 10000, 20000), 
+                             labels=c(0.004, 0.008, 0.016, 0.023, 0.031, 0.039,
+                                      0.046, 0.054, 0.061, 0.069, 0.076, 0.08))
+expected_doublet_rate <- as.numeric(as.character(expected_doublet_rate))
+nExp_poi <- round(expected_doublet_rate * nrow(pbmc3k.final@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+pbmc3k.final <- doubletFinder(pbmc3k.final, PCs = 1:10, pN = 0.25, pK = mpK, nExp = nExp_poi, reuse.pANN = FALSE, sct = FALSE)
+pbmc3k.final <- subset(pbmc3k.final, subset = DF.classifications_0.25_0.01_61 != "Doublet")
+```
+
+Directly load pre-organized data and load PBMC dataset by R package
+SeuratData
 
 ``` r
 # devtools::install_github('satijalab/seurat-data')
@@ -247,7 +339,7 @@ DimPlot(pbmc3k.final, reduction = "umap",
         group.by = "seurat_annotations",label = T) + NoLegend()
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
 
 ``` r
 # set cluster to idents
@@ -291,54 +383,46 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
 #> Validating object structure
 #> Updating object slots
 #> Ensuring keys are in the proper structure
+#> Updating matrix keys for DimReduc 'pca'
+#> Updating matrix keys for DimReduc 'umap'
+#> Ensuring keys are in the proper structure
 #> Ensuring feature names don't have underscores or pipes
+#> Updating slots in RNA
+#> Updating slots in RNA_nn
+#> Setting default assay of RNA_nn to RNA
+#> Updating slots in RNA_snn
+#> Setting default assay of RNA_snn to RNA
+#> Updating slots in pca
+#> Updating slots in umap
+#> Setting umap DimReduc to global
+#> Setting assay used for NormalizeData.RNA to RNA
+#> Setting assay used for FindVariableFeatures.RNA to RNA
+#> Setting assay used for ScaleData.RNA to RNA
+#> Setting assay used for RunPCA.RNA to RNA
+#> Setting assay used for JackStraw.RNA.pca to RNA
+#> No assay information could be found for ScoreJackStraw
+#> Setting assay used for FindNeighbors.RNA.pca to RNA
+#> No assay information could be found for FindClusters
+#> Setting assay used for RunUMAP.RNA.pca to RNA
+#> Validating object structure for Assay 'RNA'
+#> Validating object structure for Graph 'RNA_nn'
+#> Validating object structure for Graph 'RNA_snn'
+#> Validating object structure for DimReduc 'pca'
+#> Validating object structure for DimReduc 'umap'
 #> Object representation is consistent with the most current Seurat version
 #> Calculate AUCell scores
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
-
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
 #> Finish calculate AUCell scores
 #> Calculate UCell scores
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
-
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
 #> Finish calculate UCell scores
 #> Calculate singscore scores
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
-
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
 #> Finish calculate singscore scores
 #> Calculate ssgsea scores
-#> Warning in .local(expr, gset.idx.list, ...): Using 'dgCMatrix' objects as input
-#> is still in an experimental stage.
-#> Warning in .filterFeatures(expr, method): 1 genes with constant expression
-#> values throuhgout the samples.
 #> [1] "Calculating ranks..."
 #> [1] "Calculating absolute values from ranks..."
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
 #> Finish calculate ssgsea scores
 #> Calculate JASMINE scores
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
-
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
 #> Finish calculate jasmine scores
 #> Calculate viper scores
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
-
-#> Warning: Feature names cannot have underscores ('_'), replacing with dashes
-#> ('-')
 #> Finish calculate viper scores
 Seurat::Assays(pbmc3k.final)
 #> [1] "RNA"       "AUCell"    "UCell"     "singscore" "ssgsea"    "JASMINE"  
@@ -360,6 +444,15 @@ result.dge <- irGSEA.integrate(object = pbmc3k.final,
                                method = c("AUCell","UCell","singscore",
                                           "ssgsea", "JASMINE", "viper"))
 #> Calculate differential gene set : AUCell
+#> For a (much!) faster implementation of the Wilcoxon Rank Sum Test,
+#> (default method for FindMarkers) please install the presto package
+#> --------------------------------------------
+#> install.packages('devtools')
+#> devtools::install_github('immunogenomics/presto')
+#> --------------------------------------------
+#> After installation of presto, Seurat will automatically use the more 
+#> efficient implementation (no further action necessary).
+#> This message will be shown once per session
 #> Finish!
 #> Calculate differential gene set : UCell
 #> Finish!
@@ -377,9 +470,9 @@ class(result.dge)
 
 ## Visualization
 
-### 1. Global show
+### Global show
 
-### heatmap plot
+#### heatmap plot
 
 Show co-upregulated or co-downregulated gene sets per cluster in RRA
 
@@ -391,9 +484,9 @@ irGSEA.heatmap.plot <- irGSEA.heatmap(object = result.dge,
 irGSEA.heatmap.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
 
-### Bubble.plot
+#### Bubble.plot
 
 Show co-upregulated or co-downregulated gene sets per cluster in RRA.
 
@@ -408,9 +501,9 @@ irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge,
 irGSEA.bubble.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
 
-### upset plot
+#### upset plot
 
 Show the intersections of significant gene sets among clusters in RRA
 
@@ -423,9 +516,9 @@ irGSEA.upset.plot <- irGSEA.upset(object = result.dge,
 irGSEA.upset.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
 
-### Stacked bar plot
+#### Stacked bar plot
 
 Show the intersections of significant gene sets among clusters in all
 methods
@@ -437,14 +530,14 @@ irGSEA.barplot.plot <- irGSEA.barplot(object = result.dge,
 irGSEA.barplot.plot
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
-### 2. local show
+### local show
 
 Show the expression and distribution of special gene sets in special
 gene set enrichment analysis method
 
-### density scatterplot
+#### density scatterplot
 
 Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE”
 in Ucell on UMAP plot.
@@ -457,9 +550,9 @@ scatterplot <- irGSEA.density.scatterplot(object = pbmc3k.final,
 scatterplot
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
 
-### half vlnplot
+#### half vlnplot
 
 Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE”
 in Ucell among clusters.
@@ -471,7 +564,7 @@ halfvlnplot <- irGSEA.halfvlnplot(object = pbmc3k.final,
 halfvlnplot
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
 
 Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE”
 between AUCell, UCell, singscore, ssgsea, JASMINE and viper among
@@ -485,9 +578,9 @@ vlnplot <- irGSEA.vlnplot(object = pbmc3k.final,
 vlnplot
 ```
 
-<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
 
-### ridge plot
+#### ridge plot
 
 Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE”
 in Ucell among clusters.
@@ -496,13 +589,15 @@ in Ucell among clusters.
 ridgeplot <- irGSEA.ridgeplot(object = pbmc3k.final,
                               method = "UCell",
                               show.geneset = "HALLMARK-INFLAMMATORY-RESPONSE")
+#> Warning in ggridges::geom_density_ridges(jittered_points = TRUE, scale = 0.95,
+#> : Ignoring unknown parameters: `size`
 ridgeplot
 #> Picking joint bandwidth of 0.00533
 ```
 
-<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
 
-### density heatmap
+#### density heatmap
 
 Show the expression and distribution of “HALLMARK-INFLAMMATORY-RESPONSE”
 in Ucell among clusters.
@@ -514,9 +609,9 @@ densityheatmap <- irGSEA.densityheatmap(object = pbmc3k.final,
 densityheatmap
 ```
 
-<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
 
-### Calculate the hub gene of the geneset
+## Calculate the hub gene of the geneset
 
 calculate the hub gene of the geneset based on the correlation between
 the geneset’s score and the expression or rank of gene included in the
@@ -563,13 +658,13 @@ head(hub.result$hub_result)
 hub.result$hub_plot$`HALLMARK-APOPTOSIS`
 ```
 
-<img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />
 
 ``` r
 hub.result$hub_plot$`HALLMARK-INFLAMMATORY-RESPONSE`
 ```
 
-<img src="man/figures/README-unnamed-chunk-19-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-20-2.png" width="100%" />
 
 ## Work with clusterProfiler package
 
