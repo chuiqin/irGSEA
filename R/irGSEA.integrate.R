@@ -93,18 +93,36 @@ irGSEA.integrate <- function(object = NULL, group.by = NULL,
     message(paste0("Calculate differential gene set", " : ", method[i]))
     result.wilcox <- tryCatch({
       marker.geneset <- lapply(levels(anno.ident), function(x){
-        a <- Seurat::FindMarkers(object = object,
-                                 assay = method[i],
-                                 slot = "scale.data",
-                                 ident.1 = x,
-                                 ident.2 = NULL,
-                                 test.use = "wilcox",
-                                 min.pct = -Inf,
-                                 logfc.threshold = 0,
-                                 min.cells.group = 0,
-                                 min.diff.pct = -Inf,
-                                 verbose = F,
-                                 min.cells.feature = 0)
+        #  check Seurat version
+        if (utils::packageVersion("Seurat") >= "5.0.2") {
+          a <- Seurat::FindMarkers(object = object,
+                                   assay = method[i],
+                                   slot = "scale.data",
+                                   fc.slot = "scale.data",
+                                   ident.1 = x,
+                                   ident.2 = NULL,
+                                   test.use = "wilcox",
+                                   min.pct = -Inf,
+                                   logfc.threshold = 0,
+                                   min.cells.group = 0,
+                                   min.diff.pct = -Inf,
+                                   verbose = F,
+                                   min.cells.feature = 0)
+        }else{
+          a <- Seurat::FindMarkers(object = object,
+                                   assay = method[i],
+                                   slot = "scale.data",
+                                   ident.1 = x,
+                                   ident.2 = NULL,
+                                   test.use = "wilcox",
+                                   min.pct = -Inf,
+                                   logfc.threshold = 0,
+                                   min.cells.group = 0,
+                                   min.diff.pct = -Inf,
+                                   verbose = F,
+                                   min.cells.feature = 0)
+        }
+
         a <- a %>% tibble::rownames_to_column(var = "gene") %>%
           dplyr::mutate(cluster = x, direction = dplyr::if_else(avg_diff >0, "up", "down")) %>%
           dplyr::select(-c("pct.1", "pct.2"))
