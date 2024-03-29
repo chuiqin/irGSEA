@@ -87,6 +87,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
                                               pvalue < 0.05 ~ "< 0.05",
                                               pvalue >= 0.05 ~ ">= 0.05",
                                               TRUE ~ NA_character_)) %>%
+    dplyr::mutate(Name = factor(Name, levels = unique(Name))) %>%
     tidyr::spread(cell, pvalue, fill = ">= 0.05") %>%
     tibble::column_to_rownames(var = "Name")
 
@@ -108,6 +109,8 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
     sig.genesets.bubble <- sig.genesets.bubble %>% dplyr::slice_head(n = top)
   }else{
     sig.genesets.bubble <- sig.genesets.bubble[rownames(sig.genesets.bubble) %in% show.geneset, ]
+    sig.genesets.bubble <- sig.genesets.bubble[intersect(show.geneset, rownames(sig.genesets.bubble)), ]
+
     if (purrr::is_null(sig.genesets.bubble)) {
       stop("All genesets of `show.geneset` are not in the `method`.")
     }
@@ -191,6 +194,7 @@ irGSEA.bubble <- function(object = NULL, method = "RRA",
   # bulid ggtree matrix
   sig.genesets.bubble.matrix <- sig.genesets.bubble %>%
     dplyr::select(c(Name, cell, value)) %>%
+    dplyr::mutate(Name = factor(Name, levels = unique(Name))) %>%
     tidyr::spread(cell, value) %>%
     tibble::column_to_rownames(var = "Name")
 

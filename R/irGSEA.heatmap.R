@@ -86,6 +86,7 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
     dplyr::mutate(cell = stringr::str_c(cluster, direction, sep = "_")) %>%
     dplyr::select(c("Name", "pvalue", "cell")) %>%
     dplyr::mutate(pvalue = dplyr::if_else(pvalue < 0.05, "significant","no significant")) %>%
+    dplyr::mutate(Name = factor(Name, levels = unique(Name))) %>%
     tidyr::spread(cell, pvalue, fill = "no significant") %>%
     tibble::column_to_rownames(var = "Name")
 
@@ -110,6 +111,7 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
                                               pvalue < 0.05 ~ "*",
                                               pvalue >= 0.05 ~ " ",
                                               TRUE ~ NA_character_)) %>%
+    dplyr::mutate(Name = factor(Name, levels = unique(Name))) %>%
     tidyr::spread(cell, pvalue, fill = " ") %>%
     tibble::column_to_rownames(var = "Name")
 
@@ -144,6 +146,9 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
   }else{
     sig.genesets.heatmap <- sig.genesets.heatmap[rownames(sig.genesets.heatmap) %in% show.geneset, ]
     sig.genesets.heatmap.text <- sig.genesets.heatmap.text[rownames(sig.genesets.heatmap.text) %in% show.geneset, ]
+    sig.genesets.heatmap <- sig.genesets.heatmap[intersect(show.geneset, rownames(sig.genesets.heatmap)), ]
+    sig.genesets.heatmap.text <- sig.genesets.heatmap.text[intersect(show.geneset, rownames(sig.genesets.heatmap.text)), ]
+
     if (purrr::is_null(sig.genesets.heatmap)) {
       stop("All genesets of `show.geneset` are not in the `method`.")
     }
@@ -180,6 +185,7 @@ irGSEA.heatmap <- function(object = NULL, method = "RRA",
 
   sig.genesets.heatmap <- sig.genesets.heatmap %>%
     tibble::rownames_to_column(var = "Name") %>%
+    dplyr::mutate(Name = factor(Name, levels = unique(Name))) %>%
     tidyr::gather(cell, value, -Name) %>%
     dplyr::mutate(value = dplyr::if_else(value=="no significant", 0, 1)) %>%
     tidyr::spread(cell, value) %>%
