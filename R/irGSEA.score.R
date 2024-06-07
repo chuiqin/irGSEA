@@ -691,25 +691,25 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
             h.gsets.list.negative <- stringr::str_match(h.gsets.list[[i]],pattern = "(.+)-")[,2] %>% purrr::discard(is.na)
             if (length(h.gsets.list.positive)==0) {
               singscore.set <- singscore::simpleScore(singscore.rank,
-                                                              upSet = h.gsets.list.negative,
-                                                              centerScore = F)
+                                                      upSet = h.gsets.list.negative,
+                                                      centerScore = F)
             }
             if (length(h.gsets.list.negative)==0) {
               singscore.set <- singscore::simpleScore(singscore.rank,
-                                                              upSet = h.gsets.list.positive,
-                                                              centerScore = F)
+                                                      upSet = h.gsets.list.positive,
+                                                      centerScore = F)
             }
             if ((length(h.gsets.list.positive)!=0)&(length(h.gsets.list.negative)!=0)) {
               singscore.set <- singscore::simpleScore(singscore.rank,
-                                                              upSet = h.gsets.list.positive,
-                                                              downSet = h.gsets.list.negative,
-                                                              centerScore = F)
+                                                      upSet = h.gsets.list.positive,
+                                                      downSet = h.gsets.list.negative,
+                                                      centerScore = F)
             }
 
           }else{
             singscore.set <- singscore::simpleScore(singscore.rank,
-                                                            upSet = h.gsets.list[[i]],
-                                                            centerScore = F)
+                                                    upSet = h.gsets.list[[i]],
+                                                    centerScore = F)
           }
           TotalScore <- NULL
           singscore.set <- singscore.set %>%
@@ -747,13 +747,26 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
     ssgsea.scores.list <- list()
     for (k in seq_along(my.matrix.list)) {
-      ssgsea.scores.list[[k]] <- GSVA::gsva(my.matrix[, my.matrix.list[[k]]],
-                                            h.gsets.list.ssgsea,
-                                            method = "ssgsea",
-                                            kcdf = kcdf,
-                                            ssgsea.norm = F,
-                                            parallel.sz = ncores,
-                                            verbose = F)
+      if (utils::packageVersion("GSVA") >= "1.52.2") {
+        ssgsea.scores.list[[k]] <- GSVA::ssgseaParam(exprData = my.matrix[, my.matrix.list[[k]]],
+                                                     geneSets = h.gsets.list.ssgsea,
+                                                     normalize = F,
+                                                     minSize = minGSSize,
+                                                     maxSize = maxGSSize
+        )
+        ssgsea.scores.list[[k]] <- GSVA::gsva(param = ssgsea.scores.list[[k]],
+                                              BPPARAM = BiocParallel::MulticoreParam(workers=ncores))
+
+      }else{
+        ssgsea.scores.list[[k]] <- GSVA::gsva(my.matrix[, my.matrix.list[[k]]],
+                                              h.gsets.list.ssgsea,
+                                              method = "ssgsea",
+                                              kcdf = kcdf,
+                                              ssgsea.norm = F,
+                                              parallel.sz = ncores,
+                                              verbose = F)
+      }
+
       gc()
 
     }
@@ -1766,12 +1779,28 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     h.gsets.list.GSVA <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
 
     GSVA.scores.list <- list()
-    GSVA.scores.list[[1]] <- GSVA::gsva(my.matrix,
-                                        h.gsets.list.GSVA,
-                                        method = "gsva",
-                                        kcdf = kcdf,
-                                        parallel.sz = ncores,
-                                        verbose = F)
+
+    if (utils::packageVersion("GSVA") >= "1.52.2") {
+      GSVA.scores.list[[1]] <- GSVA::gsvaParam(exprData = my.matrix,
+                                               geneSets = h.gsets.list.GSVA,
+                                               kcdf = kcdf,
+                                               minSize = minGSSize,
+                                               maxSize = maxGSSize)
+
+      GSVA.scores.list[[1]] <- GSVA::gsva(param = GSVA.scores.list[[1]],
+                                          BPPARAM = BiocParallel::MulticoreParam(workers=ncores))
+
+    }else{
+      GSVA.scores.list[[1]] <- GSVA::gsva(my.matrix,
+                                          h.gsets.list.GSVA,
+                                          method = "gsva",
+                                          kcdf = kcdf,
+                                          parallel.sz = ncores,
+                                          verbose = F)
+    }
+
+
+
     GSVA.scores.list <- do.call(cbind, GSVA.scores.list)
     object[["GSVA"]] <- SeuratObject::CreateAssayObject(counts = GSVA.scores.list)
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
@@ -1793,12 +1822,27 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     h.gsets.list.zscore <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
 
     zscore.scores.list <- list()
-    zscore.scores.list[[1]] <- GSVA::gsva(as.matrix(my.matrix),
-                                          h.gsets.list.zscore,
-                                          method = "zscore",
-                                          kcdf = kcdf,
-                                          parallel.sz = ncores,
-                                          verbose = F)
+
+    if (utils::packageVersion("GSVA") >= "1.52.2") {
+      zscore.scores.list[[1]] <- GSVA::zscoreParam(exprData = as.matrix(my.matrix),
+                                                   geneSets = h.gsets.list.zscore,
+                                                   minSize = minGSSize,
+                                                   maxSize = maxGSSize)
+
+
+      zscore.scores.list[[1]] <- GSVA::gsva(param = zscore.scores.list[[1]],
+                                            BPPARAM = BiocParallel::MulticoreParam(workers=ncores))
+
+    }else{
+      zscore.scores.list[[1]] <- GSVA::gsva(as.matrix(my.matrix),
+                                            h.gsets.list.zscore,
+                                            method = "zscore",
+                                            kcdf = kcdf,
+                                            parallel.sz = ncores,
+                                            verbose = F)
+    }
+
+
 
     zscore.scores.list <- do.call(cbind, zscore.scores.list)
     object[["zscore"]] <- SeuratObject::CreateAssayObject(counts = zscore.scores.list)
@@ -1822,12 +1866,27 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     h.gsets.list.plage <- h.gsets.list %>% purrr::discard(.p = function(x){all(stringr::str_detect(x, pattern = "\\+$|-$"))})
 
     plage.scores.list <- list()
-    plage.scores.list[[1]] <- GSVA::gsva(as.matrix(my.matrix),
-                                         h.gsets.list.plage,
-                                         method = "plage",
-                                         kcdf = kcdf,
-                                         parallel.sz = ncores,
-                                         verbose = F)
+
+    if (utils::packageVersion("GSVA") >= "1.52.2") {
+      plage.scores.list[[1]] <- GSVA::plageParam(exprData = as.matrix(my.matrix),
+                                                 geneSets = h.gsets.list.plage,
+                                                 minSize = minGSSize,
+                                                 maxSize = maxGSSize)
+
+
+      plage.scores.list[[1]] <- GSVA::gsva(param = plage.scores.list[[1]],
+                                           BPPARAM = BiocParallel::MulticoreParam(workers=ncores))
+
+    }else{
+      plage.scores.list[[1]] <- GSVA::gsva(as.matrix(my.matrix),
+                                           h.gsets.list.plage,
+                                           method = "plage",
+                                           kcdf = kcdf,
+                                           parallel.sz = ncores,
+                                           verbose = F)
+    }
+
+
 
     plage.scores.list <- do.call(cbind, plage.scores.list)
     object[["plage"]] <- SeuratObject::CreateAssayObject(counts = plage.scores.list)

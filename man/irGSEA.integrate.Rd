@@ -9,7 +9,8 @@ irGSEA.integrate(
   group.by = NULL,
   metadata = NULL,
   col.name = NULL,
-  method = c("AUCell", "UCell", "singscore", "ssgsea")
+  method = c("AUCell", "UCell", "singscore", "ssgsea"),
+  p.value = "p_val_adj"
 )
 }
 \arguments{
@@ -25,6 +26,10 @@ the ident of Seurat object to perform differential gene sets analysis.}
 
 \item{method}{A vector to select enrichment score matrixes. Default all
 enrichment score matrixes}
+
+\item{p.value}{p_val_adj or p_val. The gene sets with statistical significance
+in different scoring methods were filtered based on the p_val_adj or p_val
+and then RRA analysis was performed. Default p_val_adj.}
 }
 \value{
 A list including the differential gene sets calculated by enrichment

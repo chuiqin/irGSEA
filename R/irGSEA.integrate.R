@@ -14,6 +14,9 @@
 #' @param col.name A name for metadata.
 #' @param method A vector to select enrichment score matrixes. Default all
 #' enrichment score matrixes
+#' @param p.value p_val_adj or p_val. The gene sets with statistical significance
+#' in different scoring methods were filtered based on the p_val_adj or p_val
+#' and then RRA analysis was performed. Default p_val_adj.
 #'
 #' @return A list including the differential gene sets calculated by enrichment
 #' score matrixes through wlicox test. Gene sets with adjusted p value < 0.05
@@ -53,7 +56,8 @@
 
 irGSEA.integrate <- function(object = NULL, group.by = NULL,
                              metadata = NULL, col.name = NULL,
-                             method = c("AUCell","UCell","singscore","ssgsea")){
+                             method = c("AUCell","UCell","singscore","ssgsea"),
+                             p.value = "p_val_adj"){
   # method
   if (all(method %in% Seurat::Assays(object)) == F) {
     stop("Please imput correct `method`.")
@@ -167,11 +171,37 @@ irGSEA.integrate <- function(object = NULL, group.by = NULL,
 
   #### RRA  ####
   p_val_adj <- NULL
+  p_val <- NULL
   cluster <- NULL
   methods <- NULL
-  deg.cluster <- deg.geneset %>%
-    dplyr::filter(p_val_adj <= 0.05) %>%
-    dplyr::select(c("avg_diff", "cluster", "gene","methods"))
+
+  if (p.value == "p_val_adj") {
+    deg.cluster <- deg.geneset %>%
+      dplyr::filter(p_val_adj <= 0.05) %>%
+      dplyr::select(c("avg_diff", "cluster", "gene","methods"))
+  }else{
+    deg.cluster <- deg.geneset %>%
+      dplyr::filter(p_val <= 0.05) %>%
+      dplyr::select(c("avg_diff", "cluster", "gene","methods"))
+  }
+
+  # if deg.cluster is empty
+  if (nrow(deg.cluster) == 0) {
+    stop(cat("None of the scoring methods: (", method,
+             ") produced statistically significant gene sets. ",
+             "Change the parameter `p.value` from `p_val_adj` to `p_val`, ",
+             "or choose other scoring methods.",
+             collapse  = ""))
+  }else{
+    if (any(!method %in% unique(deg.cluster$methods))) {
+      cat("None of the scoring methods: (",
+          method[!method %in% unique(deg.cluster$methods)],
+          ") produced statistically significant gene sets.",collapse  = "")
+      cat("\n")
+      cat("These methods will not be included in the subsequent RRA analysis.")
+    }
+  }
+
 
   deg.cluster$cluster <- as.factor(as.character(deg.cluster$cluster))
   deg.cluster <- deg.cluster %>%
