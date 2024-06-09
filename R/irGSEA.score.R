@@ -795,7 +795,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     RankCalculation <- function(x,genes){
       subdata = x[x!=0]                                                                      ### Removing Dropouts from single cell
       DataRanksUpdated=rank(subdata)                                                         ### Calculating ranks of each signature gene per cell
-      DataRanksSigGenes = DataRanksUpdated[which(names(DataRanksUpdated) %in% genes)]        ### Shortling rank vector for signature genes
+      DataRanksSigGenes = DataRanksUpdated[names(DataRanksUpdated) %in% genes]        ### Shortling rank vector for signature genes
       CumSum = ifelse(length(DataRanksSigGenes),mean(DataRanksSigGenes,na.rm = TRUE),0 )     ### Calculating Mean of ranks for signature genes
       FinalRawRank = CumSum/length(subdata)                                                  ### Normalizing Means by total coverage
       return(FinalRawRank)
@@ -803,13 +803,13 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
     # Calculating enrichment of signature genes across each cell 	(using odds ratio)
     ORCalculation <- function(data, genes){
-      GE = data[which(rownames(data) %in% genes),]                                          ### Subsetting data for signature genes
-      NGE = data[-which(rownames(data) %in% genes),]                                        ### Subsetting data for non-signature genes
-      SigGenesExp = apply(GE,2,function(x) length(x[x!=0]))                                 ### Calculating Number of expressed Signature Genes per cell
-      NSigGenesExp = apply(NGE,2,function(x) length(x[x!=0]))                               ### Calculating Number of expressed Non-Signature Genes per cell
+      GE = data[rownames(data) %in% genes, , drop = FALSE]                                          ### Subsetting data for signature genes
+      NGE = data[! rownames(data) %in% genes, , drop = FALSE]                                        ### Subsetting data for non-signature genes
+      SigGenesExp = Matrix::colSums(GE != 0)
+      NSigGenesExp = Matrix::colSums(NGE != 0)                                 ### Calculating Number of expressed Non-Signature Genes per cell
       SigGenesNE = nrow(GE) - SigGenesExp                                                   ### Calculating Number of Not expressed Signature Genes per cell
-      SigGenesNE = replace(SigGenesNE,SigGenesNE==0,1)									  ### Replacing Zero's with 1
-      NSigGenesExp = replace(NSigGenesExp,NSigGenesExp==0,1)                                ### Replacing Zero's with 1
+      SigGenesNE[SigGenesNE == 0] = 1
+      NSigGenesExp[NSigGenesExp == 0] = 1                                ### Replacing Zero's with 1
       NSigGenesNE = nrow(data) - (NSigGenesExp + SigGenesExp)                               ### Calculating Number of Not expressed Non-Signature Genes per cell
       NSigGenesNE = NSigGenesNE - SigGenesNE
       OR = (SigGenesExp * NSigGenesNE) / (SigGenesNE * NSigGenesExp)                         ### Calculating Enrichment (Odds Ratio)
@@ -818,13 +818,13 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
     # Calculating enrichment of signature genes across each cell (using Likelihood ratio)
     LikelihoodCalculation <- function(data,genes){
-      GE = data[which(rownames(data) %in% genes),]
-      NGE = data[-which(rownames(data) %in% genes),]
-      SigGenesExp = apply(GE,2,function(x) length(x[x!=0]))
-      NSigGenesExp = apply(NGE,2,function(x) length(x[x!=0]))
+      GE = data[rownames(data) %in% genes, , drop = FALSE]
+      NGE = data[! rownames(data) %in% genes, , drop = FALSE]
+      SigGenesExp = Matrix::colSums(GE != 0)
+      NSigGenesExp = Matrix::colSums(NGE != 0)
       SigGenesNE = nrow(GE) - SigGenesExp
-      SigGenesNE = replace(SigGenesNE,SigGenesNE==0,1)
-      NSigGenesExp = replace(NSigGenesExp,NSigGenesExp==0,1)
+      SigGenesNE[SigGenesNE == 0] = 1
+      NSigGenesExp[NSigGenesExp == 0] = 1
       NSigGenesNE = nrow(data) - (NSigGenesExp + SigGenesExp)
       NSigGenesNE = NSigGenesNE - SigGenesNE
       LR1 = SigGenesExp*(NSigGenesExp + NSigGenesNE)
@@ -857,10 +857,10 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
           LR = NormalizationJAS(LR)															 ### Normalizing Enrichment Scores (LR)
           JAS_Scores = (RM + LR)/2
         }
-        FinalScores = data.frame(JAS_Scores)
+        # FinalScores = data.frame(JAS_Scores)
         # FinalScores = data.frame(names(RM),JAS_Scores)                                       ### JASMINE scores
         # colnames(FinalScores)[1]='SampleID'
-        return(FinalScores)
+        return(JAS_Scores)
       }
     }
 
@@ -879,6 +879,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
           data.jasmine <- JASMINE(data = my.matrix[, my.matrix.list[[k]]],
                                   genes = h.gsets.list.jasmine[[x]],
                                   method = JASMINE.method)
+          data.jasmine <- data.frame(data.jasmine = data.jasmine)
           colnames(data.jasmine)[1] <- names(h.gsets.list.jasmine)[[x]]
           return(data.jasmine)
         })

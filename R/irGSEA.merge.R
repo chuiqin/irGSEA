@@ -79,50 +79,24 @@ irGSEA.merge <- function(object.x = NULL, object.y = NULL,
 
     for (i in seq_along(object.y)) {
 
-      # if v5 or v3
-      if (class(object.x[[k]])[1] == "Assay5") {
-        options(Seurat.object.assay.version = "v5")
-        version <- "v5"
-      }else{
-        options(Seurat.object.assay.version = "v3")
-        version <- "v3"
-      }
-
-      # if verison of Assay same
-
-      if (class(object.x[[k]])[1] != class(object.y[[i]][[k]])[1]) {
-        message(paste0("The Seurat/Assay versions of the object.x and object.y: ",
-                       i,
-                       " are inconsistent. \n",
-                       "We convert object.y: ",
-                       i,
-                       " from ",
-                       class(object.y[[i]][[k]])[1],
-                       " to ",
-                       class(object.x[[k]])[1],
-                       " ."))
-
-        # convert
-        if (class(object.y[[i]][[k]])[1] == "Assay5") {
-          object.y[[i]][[k]] <- methods::as(object = object.y[[i]][[k]], Class = "Assay")
-        }else{
-          object.y[[i]][[k]] <- methods::as(object = object.y[[i]][[k]], Class = "Assay5")
-        }
-      }
-
       # acts.x
-      tryCatch({
+      acts.x <- tryCatch({
         acts.x <- SeuratObject::GetAssayData(object.x, assay = k, slot = "scale.data")
       }, error = function(e) {
         acts.x <- NULL
       })
 
-      # acts.Y
-      tryCatch({
+      # acts.y
+      acts.y <- tryCatch({
         acts.y <- SeuratObject::GetAssayData(object.y[[i]], assay = k, slot = "scale.data")
       }, error = function(e) {
-        acts.Y <- NULL
+        acts.y <- NULL
       })
+
+      # next
+      if (is.null(acts.x) & is.null(acts.y)) {
+        next
+      }
 
 
 
@@ -147,56 +121,128 @@ irGSEA.merge <- function(object.x = NULL, object.y = NULL,
       if (is.null(acts)) { next }
 
 
+      # if version
+      version <- tryCatch({
+        # if v5 or v3
+        if (class(object.x[[k]])[1] == "Assay5") {
+          options(Seurat.object.assay.version = "v5")
+          version <- "v5"
+        }else{
+          options(Seurat.object.assay.version = "v3")
+          version <- "v3"
+        }
+      }, error = function(e) {
+        version <- tryCatch({
+          # if v5 or v3
+          if (class(object.y[[i]][[k]])[1] == "Assay5") {
+            options(Seurat.object.assay.version = "v5")
+            version <- "v5"
+          }else{
+            options(Seurat.object.assay.version = "v3")
+            version <- "v3"
+          }
+        }, error = function(e) {
+          options(Seurat.object.assay.version = "v3")
+          version <- "v3"
+        })
+      })
+
+      # if verison of Assay same
+      tryCatch({
+        if (class(object.x[[k]])[1] != class(object.y[[i]][[k]])[1]) {
+          message(paste0("The Seurat/Assay versions of the object.x and object.y: ",
+                         i,
+                         " are inconsistent. \n",
+                         "We convert object.y: ",
+                         i,
+                         " from ",
+                         class(object.y[[i]][[k]])[1],
+                         " to ",
+                         class(object.x[[k]])[1],
+                         " ."))
+
+          # convert
+          if (class(object.y[[i]][[k]])[1] == "Assay5") {
+            object.y[[i]][[k]] <- methods::as(object = object.y[[i]][[k]], Class = "Assay")
+          }else{
+            object.y[[i]][[k]] <- methods::as(object = object.y[[i]][[k]], Class = "Assay5")
+          }
+        }
+      }, error = function(e) {
+        # print("")
+      })
+
+
+
+
       # meta.features
       # object.x
-      if (purrr::is_empty(object.x[[k]]@meta.features)) {
-        if (version == "v3") {
-          object.x.meta.features <- data.frame(geneset = rownames(object.x[[k]]),
-                                               target.gene = "")
-        }else{
-          object.x.meta.features <- data.frame(geneset = rownames(object.x[[k]]),
-                                               target.gene = "") %>%
-            tibble::column_to_rownames(var = "geneset")
-        }
+
+      if (is.null(acts.x)) {
+        object.x.meta.features <- NULL
       }else{
-        if (version == "v3") {
-          object.x.meta.features <- object.x[[k]]@meta.features %>%
-            tibble::rownames_to_column(var = "geneset")
+        if (purrr::is_empty(object.x[[k]]@meta.features)) {
+          if (version == "v3") {
+            object.x.meta.features <- data.frame(geneset = rownames(object.x[[k]]),
+                                                 target.gene = "")
+          }else{
+            object.x.meta.features <- data.frame(geneset = rownames(object.x[[k]]),
+                                                 target.gene = "") %>%
+              tibble::column_to_rownames(var = "geneset")
+          }
+
         }else{
-          object.x.meta.features <- object.x[[k]]@meta.features
+          if (version == "v3") {
+            object.x.meta.features <- object.x[[k]]@meta.features %>%
+              tibble::rownames_to_column(var = "geneset")
+          }else{
+            object.x.meta.features <- object.x[[k]]@meta.features
+          }
+        }
+        if (overwrite) {
+          index.intersect <- !rownames(acts.x) %in% rownames(acts.y)
+          object.x.meta.features <- object.x.meta.features[index.intersect, ]
+
         }
       }
 
-      if (overwrite) {
-        index.intersect <- !rownames(acts.x) %in% rownames(acts.y)
-        object.x.meta.features <- object.x.meta.features[index.intersect, ]
-
-      }
 
 
       # object.y
-      if (purrr::is_empty(object.y[[i]][[k]]@meta.features)) {
-        if (version == "v3") {
-          object.y.meta.features <- data.frame(geneset = rownames(object.y[[i]][[k]]),
-                                               target.gene = "")
-        }else{
-          object.y.meta.features <- data.frame(geneset = rownames(object.y[[i]][[k]]),
-                                               target.gene = "") %>%
-            tibble::column_to_rownames(var = "geneset")
-        }
 
+      if (is.null(acts.y)) {
+        object.y.meta.features <- NULL
       }else{
-        if (version == "v3") {
-          object.y.meta.features <- object.y[[i]][[k]]@meta.features %>%
-            tibble::rownames_to_column(var = "geneset")
+        if (purrr::is_empty(object.y[[i]][[k]]@meta.features)) {
+
+          if (version == "v3") {
+            object.y.meta.features <- data.frame(geneset = rownames(object.y[[i]][[k]]),
+                                                 target.gene = "")
+          }else{
+            object.y.meta.features <- data.frame(geneset = rownames(object.y[[i]][[k]]),
+                                                 target.gene = "") %>%
+              tibble::column_to_rownames(var = "geneset")
+          }
+          object.y.meta.features$geneset <- rownames(acts.y)
+
         }else{
-          object.y.meta.features <- object.y[[i]][[k]]@meta.features
+          if (version == "v3") {
+            object.y.meta.features <- object.y[[i]][[k]]@meta.features %>%
+              tibble::rownames_to_column(var = "geneset")
+          }else{
+            object.y.meta.features <- object.y[[i]][[k]]@meta.features
+          }
+          object.y.meta.features$geneset <- rownames(acts.y)
         }
 
       }
 
-      object.y.meta.features$geneset <- rownames(acts.y)
 
+
+
+      if (is.null(object.x.meta.features) & is.null(object.y.meta.features) ) {
+        next
+      }
 
 
 

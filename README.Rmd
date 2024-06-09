@@ -26,7 +26,7 @@ For more details, please view [irGSEA](https://chuiqin.github.io/irGSEA/)
 And you can view:
 [Chinese tutorial_1](https://www.jianshu.com/p/463dd6e2986f)
 [Chinese tutorial_2](https://www.jianshu.com/p/66c365352613)
-
+Cite:  irGSEA: the integration of single-cell rank-based gene set enrichment analysis, Briefings in Bioinformatics, Volume 25, Issue 4, July 2024, bbae243, https://doi.org/10.1093/bib/bbae243
 
 # 0.Graph Abstrast
 ![Graph Abstrast](./man/figures/Abstrast.jpg)
