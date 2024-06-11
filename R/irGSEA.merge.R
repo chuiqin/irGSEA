@@ -110,7 +110,7 @@ irGSEA.merge <- function(object.x = NULL, object.y = NULL,
         index.intersect <- match(rownames(acts.x), rownames(acts.y))
         if (any(!is.na(index.intersect))) {
           index.intersect2 <- index.intersect[!is.na(index.intersect)]
-          rownames(acts.y)[index.intersect2] <- paste0(rownames(acts.y)[index.intersect2], "-1")
+          rownames(acts.y)[index.intersect2] <- paste0(rownames(acts.y)[index.intersect2], "-", i)
           acts <- rbind(acts.x, acts.y)
         }else{
           acts <- rbind(acts.x, acts.y)

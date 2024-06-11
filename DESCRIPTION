@@ -1,7 +1,7 @@
 Package: irGSEA
 Type: Package
 Title: The integration of single cell rank-based gene set enrichment analysis
-Version: 3.2.8
+Version: 3.2.9
 Author: Chuiqin Fan
 Author@R: person("Chuiqin", "Fan", role = c('aut', 'cre'), email = '19cqfan@stu.edu.cn')
 Maintainer: Chuiqin Fan <19cqfan@stu.edu.cn>
