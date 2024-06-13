@@ -879,17 +879,28 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
           data.jasmine <- JASMINE(data = my.matrix[, my.matrix.list[[k]]],
                                   genes = h.gsets.list.jasmine[[x]],
                                   method = JASMINE.method)
+          if (is.null(data.jasmine)) {
+            return(NULL)
+          }
           data.jasmine <- data.frame(data.jasmine = data.jasmine)
           colnames(data.jasmine)[1] <- names(h.gsets.list.jasmine)[[x]]
           return(data.jasmine)
         })
-
+      jasmine.scores <- jasmine.scores %>% purrr::compact()
       jasmine.scores <- do.call(cbind, jasmine.scores)
       jasmine.scores.list[[k]] <- jasmine.scores
       gc()
     }
 
     jasmine.scores.list <- do.call(rbind, jasmine.scores.list)
+    if (length(colnames(jasmine.scores.list))!=length(names(h.gsets.list.jasmine))) {
+      message("The gene set: ",
+              stringr::str_c(
+                names(h.gsets.list.jasmine)[! names(h.gsets.list.jasmine) %in% colnames(jasmine.scores.list)],
+                collapse = ", "),
+              " only keeps 1 gene but JASMINE needs >= 2 genes in the gene set. ",
+              "Thus, the gene set is filtered.")
+    }
     object[["JASMINE"]] <- SeuratObject::CreateAssayObject(counts = t(jasmine.scores.list))
     object <- SeuratObject::SetAssayData(object, slot = "scale.data",
                                          new.data = t(jasmine.scores.list), assay = "JASMINE")
