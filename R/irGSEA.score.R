@@ -1052,6 +1052,16 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     }
 
 
+
+    # save original metadata of object
+    meta.data.orginal <- object@meta.data
+
+    # replace non na metedata
+    meta.data.non.na <- object@meta.data %>%
+      dplyr::select(tidyselect::where(~ !any(is.na(.))))
+    object@meta.data <- meta.data.non.na
+
+
     if (is.null(VISION.latentSpace)) {
 
       if (length(SeuratObject::Reductions(object)) == 0) {
@@ -1078,6 +1088,9 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
                                    pool = F,
                                    latentSpace = VISION.latentSpace)
     }
+
+    # reverse original metadata of object
+    object@meta.data <- meta.data.orginal
 
     if (.Platform$OS.type != "windows") {
       options(mc.cores = ncores)
