@@ -2082,7 +2082,7 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
     colnames(score) = colnames(my.matrix)
 
     for (i in rownames(score)) {
-      score[i,] = as.numeric(object.AddModuleScore[, stringr::str_detect(colnames(object.AddModuleScore), pattern = i)])
+      score[i,] = as.numeric(object.AddModuleScore[, stringr::str_detect(colnames(object.AddModuleScore), pattern = stringr::fixed(i))])
     }
 
 
