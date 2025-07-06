@@ -343,6 +343,10 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
   # convert v5 to v3
   if (class(object[[assay]])[1] == "Assay5") {
+    # if perform FindVariableFeatures
+    if (is.null(Seurat::VariableFeatures(object[[assay]]))) {
+      object <- Seurat::FindVariableFeatures(object, assay = assay)
+    }
     object[[assay]] <- methods::as(object = object[[assay]], Class = "Assay")
     Seurat.treated <- T
   }else{
@@ -2525,17 +2529,33 @@ irGSEA.score <- function(object = NULL, assay = NULL, slot = "data",
 
         }
 
-        # meta.features
-        if (purrr::is_empty(object.bak[[i]]@meta.features)) {
-          object.bak.meta.features <- data.frame(geneset = rownames(object.bak[[i]]),
-                                                 target.gene = "")
-        }else{
-          object.bak.meta.features <- object.bak[[i]]@meta.features %>%
-            tibble::rownames_to_column(var = "geneset")
-        }
+        # ad meta.features or meta.data of the Assay
+        # merge the meta.features between bak and new
+        if (class(object.bak[[i]])[1] == "Assay5") {
+          # v5
+          if (purrr::is_empty(object.bak[[i]]@meta.data)) {
+            object.bak.meta.features <- data.frame(geneset = rownames(object.bak[[i]]),
+                                                   target.gene = "")
+          }else {
+            object.bak.meta.features <- object.bak[[i]]@meta.data
+            rownames(object.bak.meta.features) <- rownames(object.bak[[i]])
+            object.bak.meta.features <- object.bak.meta.features %>%
+              tibble::rownames_to_column(var = "geneset")
+          }
 
+        }else {
+          # v4 or v3
+          if (purrr::is_empty(object.bak[[i]]@meta.features)) {
+            object.bak.meta.features <- data.frame(geneset = rownames(object.bak[[i]]),
+                                                   target.gene = "")
+          }else {
+            object.bak.meta.features <- object.bak[[i]]@meta.features %>%
+              tibble::rownames_to_column(var = "geneset")
+          }
+        }
+        # add
         if (overwrite) {
-          object.bak.meta.features <- object.bak.meta.features[index.intersect,]
+          object.bak.meta.features <- object.bak.meta.features[index.intersect, ,drop = F]
           object.meta.features <- object[[i]]@meta.features %>%
             tibble::rownames_to_column(var = "geneset")
           object.merge.meta.features <- rbind(object.bak.meta.features, object.meta.features)

@@ -4,6 +4,7 @@
 # irGSEA
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 Integrate all single cell rank-based gene set enrichment analysis and
@@ -12,12 +13,11 @@ easy to visualize the results.
 For more details, please view
 [irGSEA](https://chuiqin.github.io/irGSEA/) And you can view: [Chinese
 tutorial_1](https://www.jianshu.com/p/463dd6e2986f) [Chinese
-tutorial_2](https://www.jianshu.com/p/66c365352613) 
+tutorial_2](https://www.jianshu.com/p/66c365352613)
 
-Cite: irGSEA: the
-integration of single-cell rank-based gene set enrichment analysis,
-Briefings in Bioinformatics, Volume 25, Issue 4, July 2024, bbae243,
-<https://doi.org/10.1093/bib/bbae243>
+Cite: irGSEA: the integration of single-cell rank-based gene set
+enrichment analysis, Briefings in Bioinformatics, Volume 25, Issue 4,
+July 2024, bbae243, <https://doi.org/10.1093/bib/bbae243>
 
 # 0.Graph Abstrast
 
@@ -99,7 +99,8 @@ if (!requireNamespace("SeuratDisk", quietly = TRUE)) {
 
 # sargent
 if (!requireNamespace("sargent", quietly = TRUE)) { 
-    devtools::install_github("Sanofi-Public/PMCB-Sargent", force =T)
+    # devtools::install_github("Sanofi-Public/PMCB-Sargent", force =T)
+    devtools::install_git("https://gitee.com/fan_chuiqin/PMCB-Sargent.git", force =T)
 }
 
 # pagoda2 need scde package
@@ -415,6 +416,7 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
 #> Validating object structure for DimReduc 'pca'
 #> Validating object structure for DimReduc 'umap'
 #> Object representation is consistent with the most current Seurat version
+#> The 'msigdbdf' package must be installed to access the full dataset.
 #> Calculate AUCell scores
 #> Finish calculate AUCell scores
 #> Calculate UCell scores
@@ -422,8 +424,14 @@ pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA",
 #> Calculate singscore scores
 #> Finish calculate singscore scores
 #> Calculate ssgsea scores
-#> [1] "Calculating ranks..."
-#> [1] "Calculating absolute values from ranks..."
+#> ℹ GSVA version 2.0.7
+#> ! 1 genes with constant values throughout the samples
+#> ! 7 genes with constant non-zero values throughout the samples
+#> ℹ Using a MulticoreParam parallel back-end with 4 workers
+#> ℹ Calculating  ssGSEA scores for 50 gene sets
+#> ℹ Calculating ranks
+#> ℹ Calculating rank weights
+#> ✔ Calculations finished
 #> Finish calculate ssgsea scores
 #> Calculate JASMINE scores
 #> Finish calculate jasmine scores
@@ -449,15 +457,6 @@ result.dge <- irGSEA.integrate(object = pbmc3k.final,
                                method = c("AUCell","UCell","singscore",
                                           "ssgsea", "JASMINE", "viper"))
 #> Calculate differential gene set : AUCell
-#> For a (much!) faster implementation of the Wilcoxon Rank Sum Test,
-#> (default method for FindMarkers) please install the presto package
-#> --------------------------------------------
-#> install.packages('devtools')
-#> devtools::install_github('immunogenomics/presto')
-#> --------------------------------------------
-#> After installation of presto, Seurat will automatically use the more 
-#> efficient implementation (no further action necessary).
-#> This message will be shown once per session
 #> Finish!
 #> Calculate differential gene set : UCell
 #> Finish!
@@ -597,7 +596,7 @@ ridgeplot <- irGSEA.ridgeplot(object = pbmc3k.final,
 #> Warning in ggridges::geom_density_ridges(jittered_points = TRUE, scale = 0.95,
 #> : Ignoring unknown parameters: `size`
 ridgeplot
-#> Picking joint bandwidth of 0.00533
+#> Picking joint bandwidth of 0.00559
 ```
 
 <img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />

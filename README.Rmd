@@ -1,5 +1,8 @@
 ---
 output: github_document
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -22,16 +25,18 @@ knitr::opts_chunk$set(
 Integrate all single cell rank-based gene set enrichment analysis and
 easy to visualize the results.
 
-For more details, please view [irGSEA](https://chuiqin.github.io/irGSEA/)
-And you can view:
-[Chinese tutorial_1](https://www.jianshu.com/p/463dd6e2986f)
-[Chinese tutorial_2](https://www.jianshu.com/p/66c365352613)
+For more details, please view
+[irGSEA](https://chuiqin.github.io/irGSEA/) And you can view: [Chinese
+tutorial_1](https://www.jianshu.com/p/463dd6e2986f) [Chinese
+tutorial_2](https://www.jianshu.com/p/66c365352613)
 
-Cite:  irGSEA: the integration of single-cell rank-based gene set enrichment analysis, Briefings in Bioinformatics, Volume 25, Issue 4, July 2024, bbae243, https://doi.org/10.1093/bib/bbae243
+Cite: irGSEA: the integration of single-cell rank-based gene set
+enrichment analysis, Briefings in Bioinformatics, Volume 25, Issue 4,
+July 2024, bbae243, <https://doi.org/10.1093/bib/bbae243>
 
 # 0.Graph Abstrast
-![Graph Abstrast](./man/figures/Abstrast.jpg)
 
+![Graph Abstrast](./man/figures/Abstrast.jpg)
 
 # 1.Installation
 
@@ -73,7 +78,9 @@ if (!requireNamespace("irGSEA", quietly = TRUE)) {
 
 ```
 
-Optional installation if you want to perform VISION, gficf, Sargent, ssGSEApy, GSVApy, etc
+Optional installation if you want to perform VISION, gficf, Sargent,
+ssGSEApy, GSVApy, etc
+
 ```{r, eval = FALSE}
 
 #### install packages from Github
@@ -105,7 +112,8 @@ if (!requireNamespace("SeuratDisk", quietly = TRUE)) {
 
 # sargent
 if (!requireNamespace("sargent", quietly = TRUE)) { 
-    devtools::install_github("Sanofi-Public/PMCB-Sargent", force =T)
+    # devtools::install_github("Sanofi-Public/PMCB-Sargent", force =T)
+    devtools::install_git("https://gitee.com/fan_chuiqin/PMCB-Sargent.git", force =T)
 }
 
 # pagoda2 need scde package
@@ -235,26 +243,28 @@ for (i in require.package) {
 ```
 
 # 2.Available method
-The time and peak memory consumption associated with 50 Hallmark gene sets 
-across 19 scoring methods for datasets of varying sizes.To address memory 
-peak issues for datasets exceeding 50,000 cells, we implemented a strategy 
-of partitioning them into processing units of 5,000 cells each for scoring. 
-While this strategy mitigates memory peak issues, it extends the processing time.
 
-![Available method](./man/figures/figure3.png)
-The time and peak memory consumption associated with 50 Hallmark gene sets 
-across irGSEA (AUCell, UCell, singscore, ssgsea, JASMINE and viper) for 
-datasets of varying sizes while the parameter chunk works.
-![Available method](./man/figures/figure4.png)
+The time and peak memory consumption associated with 50 Hallmark gene
+sets across 19 scoring methods for datasets of varying sizes.To address
+memory peak issues for datasets exceeding 50,000 cells, we implemented a
+strategy of partitioning them into processing units of 5,000 cells each
+for scoring. While this strategy mitigates memory peak issues, it
+extends the processing time.
+
+![Available method](./man/figures/figure3.png) The time and peak memory
+consumption associated with 50 Hallmark gene sets across irGSEA (AUCell,
+UCell, singscore, ssgsea, JASMINE and viper) for datasets of varying
+sizes while the parameter chunk works. ![Available
+method](./man/figures/figure4.png)
 
 # 3.Example dataset
 
 ## pre-processing workflow
 
-Start from the 10X output file and organize it into the format required 
+Start from the 10X output file and organize it into the format required
 by the irGSEA package
 
-``` {r, eval = FALSE}
+```{r, eval = FALSE}
 # load library
 library(dplyr)
 library(Seurat)
@@ -328,9 +338,10 @@ pbmc3k.final <- subset(pbmc3k.final, subset = DF.classifications_0.25_0.01_61 !=
 
 ```
 
-Directly load pre-organized data and load PBMC dataset by R package SeuratData
+Directly load pre-organized data and load PBMC dataset by R package
+SeuratData
 
-``` {r, eval = FALSE}
+```{r, eval = FALSE}
 # devtools::install_github('satijalab/seurat-data')
 library(SeuratData)
 # view all available datasets
@@ -356,27 +367,27 @@ Idents(pbmc3k.final) <- pbmc3k.final$seurat_annotations
 ```
 
 ## Load library
+
 ```{r message=FALSE, warning=FALSE}
 library(irGSEA)
 ```
-
 
 ## Calculate enrichment scores
 
 calculate enrichment scores, return a Seurat object including these
 score matrix
 
-AUcell or ssGSEA will run for a long time if there are lots of genes or cells. 
-Thus, It's recommended to keep high quality genes or cells.
+AUcell or ssGSEA will run for a long time if there are lots of genes or
+cells. Thus, It's recommended to keep high quality genes or cells.
 
-Error (Valid 'mctype': 'snow' or 'doMC') occurs when ncore > 1 :
-please ensure the version of AUCell >= 1.14 or set ncore = 1.
+Error (Valid 'mctype': 'snow' or 'doMC') occurs when ncore \> 1 : please
+ensure the version of AUCell \>= 1.14 or set ncore = 1.
 
-It can be ignore when warnning occurs as follow: 
-1. closing unused connection 3 (localhost)
-2. Using 'dgCMatrix' objects as input is still in an experimental stage.
-3. xxx genes with constant expression values throuhgout the samples.
-4. Some gene sets have size one. Consider setting 'min.sz' > 1.
+It can be ignore when warnning occurs as follow: 1. closing unused
+connection 3 (localhost) 2. Using 'dgCMatrix' objects as input is still
+in an experimental stage. 3. xxx genes with constant expression values
+throuhgout the samples. 4. Some gene sets have size one. Consider
+setting 'min.sz' \> 1.
 
 ```{r}
 pbmc3k.final <- irGSEA.score(object = pbmc3k.final, assay = "RNA", 
@@ -431,7 +442,8 @@ irGSEA.heatmap.plot
 Show co-upregulated or co-downregulated gene sets per cluster in RRA.
 
 If error (argument "caller_env" is missing, with no default) occurs :
-please uninstall ggtree and run "remotes::install_github("YuLab-SMU/ggtree")".
+please uninstall ggtree and run
+"remotes::install_github("YuLab-SMU/ggtree")".
 
 ```{r fig.height=8, fig.width=10}
 irGSEA.bubble.plot <- irGSEA.bubble(object = result.dge, 
@@ -444,7 +456,7 @@ irGSEA.bubble.plot
 
 Show the intersections of significant gene sets among clusters in RRA
 
-Don't worry if warning happens : the condition has length > 1 and only 
+Don't worry if warning happens : the condition has length \> 1 and only
 the first element will be used. It's ok.
 
 ```{r}
@@ -497,7 +509,8 @@ halfvlnplot
 ```
 
 Show the expression and distribution of "HALLMARK-INFLAMMATORY-RESPONSE"
-between AUCell, UCell, singscore, ssgsea, JASMINE and viper among clusters.
+between AUCell, UCell, singscore, ssgsea, JASMINE and viper among
+clusters.
 
 ```{r}
 vlnplot <- irGSEA.vlnplot(object = pbmc3k.final,
@@ -506,7 +519,6 @@ vlnplot <- irGSEA.vlnplot(object = pbmc3k.final,
                           show.geneset = "HALLMARK-INFLAMMATORY-RESPONSE")
 vlnplot
 ```
-
 
 #### ridge plot
 
@@ -535,8 +547,9 @@ densityheatmap
 
 ## Calculate the hub gene of the geneset
 
-calculate the hub gene of the geneset based on the correlation between the 
-geneset's score and the expression or rank of gene included in the geneset
+calculate the hub gene of the geneset based on the correlation between
+the geneset's score and the expression or rank of gene included in the
+geneset
 
 ```{r fig.height=8, fig.width=18}
 hub.result <- irGSEA.hub(object = pbmc3k.final, assay = "RNA", slot = "data",
@@ -654,9 +667,7 @@ head(go.list)
 
 ```
 
-
 ## Work with newest Msigdb
-
 
 ```{r, eval = FALSE}
 #### work with newest Msigdb ####
@@ -834,10 +845,3 @@ msigdb.kegg <- msigdb.kegg %>%
   purrr::set_names(levels(msigdb.kegg$term))
 
 ```
-
-
-
-
-
-
-
